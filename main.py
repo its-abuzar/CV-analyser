@@ -17,7 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Load skills database
+# Load skills database useless
 SKILLS_DB_PATH = Path(__file__).parent / "skills_db.json"
 with open(SKILLS_DB_PATH) as f:
     SKILLS_DB = json.load(f)

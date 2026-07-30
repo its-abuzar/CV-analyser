@@ -1,58 +1,368 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="SkillMatch Pro analyzes your CV against any job description — tech stack gaps, experience checks, quantifiable achievements, resume structure, interview prep and salary intel, all in one report.">
-    <meta name="theme-color" content="#0f172a">
-    <meta property="og:title" content="SkillMatch Pro — Technical CV Analyzer">
-    <meta property="og:description" content="Upload your CV and a job description. Get a hardcore technical match analysis — no fluff, just facts.">
-    <meta property="og:type" content="website">
-    <title>SkillMatch Pro — Technical CV Analyzer</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%238b5cf6'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Cpath d='M17 6 8 18h6l-1 8 9-12h-6z' fill='white'/%3E%3C/svg%3E">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { display: ['"Space Grotesk"', 'sans-serif'], mono: ['"JetBrains Mono"', 'monospace'] }
-                }
-            }
-        }
-    </script>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillMatch Pro - AI-Powered CV Analyzer</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com">
+    tailwind.config = {
+      corePlugins: { preflight: false }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="bg-orb" style="width:500px;height:500px;background:#8b5cf6;top:-100px;right:-100px;"></div>
-    <div class="bg-orb" style="width:400px;height:400px;background:#06b6d4;bottom:-50px;left:-80px;"></div>
-    <div id="app" class="relative z-10"></div>
+  <div class="app-container">
+    <nav class="navbar">
+      <div class="nav-inner">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+          <i class="fas fa-bars"></i>
+        </button>
+        <a href="#" class="nav-logo" data-page="home">
+          <i class="fas fa-brain"></i>
+          <span class="logo-text">SkillMatch<span class="logo-accent">Pro</span></span>
+        </a>
+        <div class="nav-links" id="navLinks">
+          <a href="#" class="nav-link active" data-page="home"><i class="fas fa-home"></i> Home</a>
+          <a href="#" class="nav-link" data-page="dashboard"><i class="fas fa-chart-bar"></i> Dashboard</a>
+          <a href="#" class="nav-link" data-page="history"><i class="fas fa-clock-rotate"></i> History</a>
+          <a href="#" class="nav-link" data-page="pricing"><i class="fas fa-tag"></i> Pricing</a>
+        </div>
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <i class="fas fa-moon"></i>
+          <i class="fas fa-sun"></i>
+        </button>
+      </div>
+    </nav>
 
-    <!-- App data and state -->
-    <script src="js/data.js"></script>
+    <main>
+      <!-- ========== HOME PAGE ========== -->
+      <section id="page-home" class="page active">
+        <div class="hero">
+          <div class="hero-badge"><i class="fas fa-sparkles"></i> AI-Powered Analysis</div>
+          <h1 class="hero-title">Match Smarter.<br>Not Harder.</h1>
+          <p class="hero-subtitle">Upload your CV, paste a job description, and let AI find the perfect fit across 40+ dimensions.</p>
+          <div class="hero-actions">
+            <a href="#" class="btn btn-primary btn-lg" data-page="dashboard"><i class="fas fa-rocket"></i> Start Analyzing</a>
+            <a href="#" class="btn btn-secondary btn-lg" data-page="pricing">See Pricing <i class="fas fa-arrow-right"></i></a>
+          </div>
+        </div>
 
-    <!-- Shared shell: nav bar, footer, main render loop -->
-    <script src="js/app.js"></script>
-    <script src="js/nav.js"></script>
+        <div class="features-section">
+          <h2 class="section-title">7 Analysis Modes</h2>
+          <p class="section-subtitle">Comprehensive insights from every angle of your resume</p>
+          <div class="features-grid" id="homeFeatureGrid"></div>
+        </div>
 
-    <!-- The four pages -->
-    <script src="js/page-home.js"></script>
-    <script src="js/page-dashboard.js"></script>
-    <script src="js/page-pricing.js"></script>
-    <script src="js/page-history.js"></script>
+        <footer class="footer">
+          <div class="footer-inner">
+            <div class="footer-brand">
+              <i class="fas fa-brain"></i>
+              <span>SkillMatch Pro</span>
+            </div>
+            <div class="footer-links">
+              <a href="#" data-page="home">Home</a>
+              <a href="#" data-page="dashboard">Dashboard</a>
+              <a href="#" data-page="history">History</a>
+              <a href="#" data-page="pricing">Pricing</a>
+            </div>
+            <p class="footer-copy">&copy; 2026 SkillMatch Pro. All rights reserved.</p>
+          </div>
+        </footer>
+      </section>
 
-    <!-- Analysis report cards -->
-    <script src="js/results.js"></script>
+      <!-- ========== DASHBOARD PAGE ========== -->
+      <section id="page-dashboard" class="page">
+        <div class="page-header">
+          <h1 class="page-title">CV Analysis</h1>
+          <p class="page-subtitle">Upload your CV and job description to get started</p>
+        </div>
 
-    <!-- Floating buttons, toasts, modals -->
-    <script src="js/overlays.js"></script>
+        <div class="input-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-file-arrow-up"></i> Upload CV</h3>
+              <div class="tab-bar" id="cvTabs">
+                <button class="tab active" data-tab="cv-upload"><i class="fas fa-upload"></i> Upload</button>
+                <button class="tab" data-tab="cv-linkedin"><i class="fab fa-linkedin"></i> LinkedIn</button>
+                <button class="tab" data-tab="cv-github"><i class="fab fa-github"></i> GitHub</button>
+                <button class="tab" data-tab="cv-text"><i class="fas fa-pen"></i> Text</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="tab-content active" data-tab-content="cv-upload">
+                <div class="upload-area" id="uploadArea">
+                  <input type="file" id="cvFileInput" accept=".pdf,.docx" hidden>
+                  <div class="upload-content" id="uploadContent">
+                    <i class="fas fa-cloud-arrow-up upload-icon"></i>
+                    <p class="upload-text">Drag & drop your CV here</p>
+                    <p class="upload-hint">Supports PDF, DOCX &mdash; Max 10MB</p>
+                  </div>
+                  <div class="file-info" id="fileInfo" hidden>
+                    <div class="file-details">
+                      <i class="fas fa-file-lines file-type-icon"></i>
+                      <span class="file-name" id="fileName">resume.pdf</span>
+                    </div>
+                    <button class="btn-icon btn-danger-icon" id="removeFileBtn" aria-label="Remove file">
+                      <i class="fas fa-xmark"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-content" data-tab-content="cv-linkedin">
+                <p class="tab-placeholder"><i class="fab fa-linkedin"></i> Connect your LinkedIn profile to import your CV automatically.</p>
+              </div>
+              <div class="tab-content" data-tab-content="cv-github">
+                <p class="tab-placeholder"><i class="fab fa-github"></i> Connect your GitHub to analyze your repositories.</p>
+              </div>
+              <div class="tab-content" data-tab-content="cv-text">
+                <textarea class="input-textarea" placeholder="Paste your CV text here..." rows="6"></textarea>
+              </div>
+            </div>
+          </div>
 
-    <!-- Click handlers, uploads, mock analysis engine -->
-    <script src="js/actions.js"></script>
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-briefcase"></i> Job Description</h3>
+              <div class="tab-bar" id="jdTabs">
+                <button class="tab" data-tab="jd-upload"><i class="fas fa-upload"></i> Upload</button>
+                <button class="tab" data-tab="jd-linkedin"><i class="fab fa-linkedin"></i> LinkedIn</button>
+                <button class="tab active" data-tab="jd-text"><i class="fas fa-pen"></i> Text</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="tab-content" data-tab-content="jd-upload">
+                <div class="upload-area upload-area-sm" id="jdUploadArea">
+                  <input type="file" accept=".pdf,.docx,.txt" hidden>
+                  <div class="upload-content">
+                    <i class="fas fa-cloud-arrow-up upload-icon upload-icon-sm"></i>
+                    <p class="upload-text upload-text-sm">Upload JD file</p>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-content" data-tab-content="jd-linkedin">
+                <p class="tab-placeholder"><i class="fab fa-linkedin"></i> Import job description from a LinkedIn posting.</p>
+              </div>
+              <div class="tab-content active" data-tab-content="jd-text">
+                <div class="textarea-wrapper">
+                  <textarea class="input-textarea" id="jdTextarea" placeholder="Paste the full job description here..." rows="8" maxlength="5000"></textarea>
+                  <div class="char-counter"><span id="jdCharCount">0</span> / 5000</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-    <!-- Boot the app -->
-    <script src="js/main.js"></script>
+        <div class="card mode-selector-card">
+          <div class="card-header">
+            <h3><i class="fas fa-sliders"></i> Analysis Mode</h3>
+          </div>
+          <div class="mode-grid" id="modeGrid"></div>
+        </div>
+
+        <button class="btn btn-primary btn-full btn-analyze" id="analyzeBtn" disabled>
+          <span class="btn-text"><i class="fas fa-play"></i> <span id="analyzeBtnText">Run Core Match Analysis</span></span>
+          <span class="btn-loader" hidden>
+            <i class="fas fa-circle-notch fa-spin"></i> Analyzing...
+          </span>
+        </button>
+
+        <div class="live-logs" id="liveLogs" hidden>
+          <div class="logs-header">
+            <i class="fas fa-terminal"></i> Live Logs
+            <span class="logs-status" id="logsStatus">Running</span>
+          </div>
+          <div class="logs-body" id="logsBody">
+            <div class="log-line log-info"><i class="fas fa-circle"></i> Initializing analysis...</div>
+            <div class="log-line log-info"><i class="fas fa-circle"></i> Parsing CV document...</div>
+            <div class="log-line log-info"><i class="fas fa-circle"></i> Extracting keywords...</div>
+            <div class="log-line log-info"><i class="fas fa-circle"></i> Computing match score...</div>
+            <div class="log-line log-success"><i class="fas fa-check"></i> Analysis complete</div>
+          </div>
+        </div>
+
+        <div class="results-section" id="resultsSection" hidden>
+          <div class="results-header">
+            <h2><i class="fas fa-chart-bar"></i> Analysis Results</h2>
+            <div class="results-actions">
+              <button class="btn btn-secondary btn-sm" id="exportPdfBtn"><i class="fas fa-file-pdf"></i> Export PDF</button>
+              <button class="btn btn-secondary btn-sm" id="shareBtn"><i class="fas fa-share-nodes"></i> Share</button>
+              <button class="btn btn-secondary btn-sm" id="newAnalysisBtn"><i class="fas fa-rotate"></i> New Analysis</button>
+            </div>
+          </div>
+
+          <div class="results-grid">
+            <div class="result-card score-card">
+              <div class="score-circle-wrapper">
+                <div class="score-circle" id="scoreCircle">
+                  <span class="score-value" id="scoreValue">0<span class="score-pct">%</span></span>
+                  <span class="score-label">Match Score</span>
+                </div>
+              </div>
+              <div class="score-details" id="scoreDetails">
+                <div class="score-stat"><span class="stat-label">Matched</span><span class="stat-value stat-matched" id="statMatched">0</span></div>
+                <div class="score-stat"><span class="stat-label">Missing</span><span class="stat-value stat-missing" id="statMissing">0</span></div>
+                <div class="score-stat"><span class="stat-label">Keywords</span><span class="stat-value" id="statKeywords">0</span></div>
+              </div>
+            </div>
+
+            <div class="result-card" id="skillBreakdownCard">
+              <h4 class="result-card-title"><i class="fas fa-bars-progress"></i> Skill Breakdown</h4>
+              <div class="skill-bars" id="skillBars"></div>
+            </div>
+
+            <div id="modeSpecificCards"></div>
+
+            <div class="result-card keywords-card">
+              <h4 class="result-card-title"><i class="fas fa-tags"></i> Keyword Analysis</h4>
+              <div class="keywords-grid">
+                <div class="keyword-group">
+                  <h5><span class="kw-dot matched"></span> Matched <span class="kw-count" id="matchedCount">0</span></h5>
+                  <div class="tags-container" id="matchedTags"></div>
+                </div>
+                <div class="keyword-group">
+                  <h5><span class="kw-dot missing"></span> Missing <span class="kw-count" id="missingCount">0</span></h5>
+                  <div class="tags-container" id="missingTags"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="error-toast" id="errorToast" hidden>
+          <i class="fas fa-circle-exclamation"></i>
+          <span id="errorMessage">Error message here</span>
+          <button class="btn-icon" id="dismissError"><i class="fas fa-xmark"></i></button>
+        </div>
+      </section>
+
+      <!-- ========== REPORT PAGE ========== -->
+      <section id="page-report" class="page">
+        <div class="page-header">
+          <h1 class="page-title"><i class="fas fa-file-lines"></i> Detailed Report</h1>
+          <button class="btn btn-secondary btn-sm" id="backToDashboard"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
+        </div>
+
+        <div class="report-tabs" id="reportTabs">
+          <button class="report-tab active" data-report-tab="overview"><i class="fas fa-gauge"></i> Overview</button>
+          <button class="report-tab" data-report-tab="techstack"><i class="fas fa-code"></i> Tech Stack</button>
+          <button class="report-tab" data-report-tab="experience"><i class="fas fa-briefcase"></i> Experience</button>
+          <button class="report-tab" data-report-tab="achievements"><i class="fas fa-trophy"></i> Achievements</button>
+          <button class="report-tab" data-report-tab="structure"><i class="fas fa-file-lines"></i> Structure</button>
+          <button class="report-tab" data-report-tab="interview"><i class="fas fa-question"></i> Interview</button>
+          <button class="report-tab" data-report-tab="salary"><i class="fas fa-dollar-sign"></i> Salary</button>
+        </div>
+
+        <div class="report-content">
+          <div class="report-panel active" data-report-panel="overview" id="reportOverview"></div>
+          <div class="report-panel" data-report-panel="techstack" id="reportTechStack"></div>
+          <div class="report-panel" data-report-panel="experience" id="reportExperience"></div>
+          <div class="report-panel" data-report-panel="achievements" id="reportAchievements"></div>
+          <div class="report-panel" data-report-panel="structure" id="reportStructure"></div>
+          <div class="report-panel" data-report-panel="interview" id="reportInterview"></div>
+          <div class="report-panel" data-report-panel="salary" id="reportSalary"></div>
+        </div>
+      </section>
+
+      <!-- ========== HISTORY PAGE ========== -->
+      <section id="page-history" class="page">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title"><i class="fas fa-clock-rotate"></i> Analysis History</h1>
+            <p class="page-subtitle">View your past CV analyses</p>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="clearHistoryBtn"><i class="fas fa-trash-can"></i> Clear History</button>
+        </div>
+
+        <div class="card">
+          <div class="history-empty" id="historyEmpty">
+            <i class="fas fa-clock-rotate"></i>
+            <h3>No analyses yet</h3>
+            <p>Run your first CV analysis to see it here.</p>
+            <a href="#" class="btn btn-primary" data-page="dashboard"><i class="fas fa-rocket"></i> Start Analyzing</a>
+          </div>
+          <div class="history-table-wrap" id="historyTableWrap" hidden>
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>CV Name</th>
+                  <th>Mode</th>
+                  <th>Score</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== PRICING PAGE ========== -->
+      <section id="page-pricing" class="page">
+        <div class="page-header text-center">
+          <h1 class="page-title">Simple, Transparent Pricing</h1>
+          <p class="page-subtitle">Choose the plan that fits your needs</p>
+        </div>
+
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <div class="pricing-header">
+              <h3 class="pricing-name">Free</h3>
+              <p class="pricing-price"><span class="price-amount">$0</span> <span class="price-period">/month</span></p>
+            </div>
+            <ul class="pricing-features">
+              <li><i class="fas fa-check"></i> 3 analyses per month</li>
+              <li><i class="fas fa-check"></i> Core Match mode</li>
+              <li><i class="fas fa-check"></i> Basic keyword matching</li>
+              <li><i class="fas fa-check"></i> Export PDF</li>
+              <li><i class="fas fa-xmark"></i> All analysis modes</li>
+              <li><i class="fas fa-xmark"></i> Detailed reports</li>
+              <li><i class="fas fa-xmark"></i> Salary Intel</li>
+            </ul>
+            <button class="btn btn-secondary btn-full">Get Started</button>
+          </div>
+
+          <div class="pricing-card pricing-popular">
+            <div class="popular-badge">Most Popular</div>
+            <div class="pricing-header">
+              <h3 class="pricing-name">Pro</h3>
+              <p class="pricing-price"><span class="price-amount">$19</span> <span class="price-period">/month</span></p>
+            </div>
+            <ul class="pricing-features">
+              <li><i class="fas fa-check"></i> Unlimited analyses</li>
+              <li><i class="fas fa-check"></i> All 7 analysis modes</li>
+              <li><i class="fas fa-check"></i> Advanced keyword analysis</li>
+              <li><i class="fas fa-check"></i> Export PDF & Share</li>
+              <li><i class="fas fa-check"></i> Detailed reports</li>
+              <li><i class="fas fa-check"></i> Salary Intel</li>
+              <li><i class="fas fa-check"></i> Priority support</li>
+            </ul>
+            <button class="btn btn-primary btn-full">Start Free Trial</button>
+          </div>
+
+          <div class="pricing-card">
+            <div class="pricing-header">
+              <h3 class="pricing-name">Enterprise</h3>
+              <p class="pricing-price"><span class="price-amount">$49</span> <span class="price-period">/month</span></p>
+            </div>
+            <ul class="pricing-features">
+              <li><i class="fas fa-check"></i> Everything in Pro</li>
+              <li><i class="fas fa-check"></i> Team accounts (up to 10)</li>
+              <li><i class="fas fa-check"></i> Bulk analysis</li>
+              <li><i class="fas fa-check"></i> API access</li>
+              <li><i class="fas fa-check"></i> Custom branding</li>
+              <li><i class="fas fa-check"></i> Dedicated support</li>
+              <li><i class="fas fa-check"></i> SSO & Security</li>
+            </ul>
+            <button class="btn btn-secondary btn-full">Contact Sales</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>

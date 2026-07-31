@@ -6,6 +6,9 @@ const S = {
   cvTab: 'upload',
   jdTab: 'jd-text',
   jdText: '',
+  cvSource: null,
+  jdSource: null,
+  profile: JSON.parse(localStorage.getItem('sm_profile') || '{}'),
   analyzing: false,
   history: JSON.parse(localStorage.getItem('sm_history') || '[]')
 };
@@ -29,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initNavigation();
   initTabs();
+  initSubTabs();
   initUpload();
   initCharCounter();
   initModeSelector();
@@ -37,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initNewAnalysis();
   initHistory();
   initSideActions();
+  initLinkImports();
+  initProfile();
   initMobileMenu();
 });
 
@@ -74,6 +80,7 @@ function navigateTo(page) {
   if (navLink) navLink.classList.add('active');
   document.getElementById('navLinks')?.classList.remove('open');
   if (page === 'history') renderHistory();
+  if (page === 'dashboard') renderProfileHints();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -149,6 +156,252 @@ function clearFile() {
   updateAnalyzeBtn();
 }
 
+function initSubTabs() {
+  document.querySelectorAll('.sub-tab-bar').forEach(bar => {
+    bar.addEventListener('click', e => {
+      const tab = e.target.closest('.sub-tab');
+      if (!tab) return;
+      const wrap = bar.closest('.sub-tabs');
+      wrap.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      wrap.querySelectorAll('.sub-panel').forEach(p => {
+        p.classList.toggle('active', p.dataset.subPanel === tab.dataset.sub);
+      });
+    });
+  });
+}
+
+function initLinkImports() {
+  document.querySelectorAll('[data-import-btn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.importBtn;
+      const input = document.querySelector(`[data-url-input="${target}"]`);
+      if (!input || !input.value.trim()) {
+        showError('Please paste a link first');
+        return;
+      }
+      const type = target.split('-')[1];
+      const url = normalizeUrl(input.value.trim());
+      if (!validateUrl(url, type)) {
+        showError(`Please enter a valid ${type === 'linkedin' ? 'LinkedIn' : 'GitHub'} URL`);
+        return;
+      }
+      if (target === 'jd-linkedin') importJobLink(url);
+      else importCvLink(target, type, url);
+    });
+  });
+
+  document.querySelectorAll('[data-remove-import]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.removeImport;
+      if (target === 'jd-linkedin') removeJdImport();
+      else removeCvImport(target);
+    });
+  });
+
+  document.querySelectorAll('[data-use-profile]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.dataset.useProfile;
+      const url = S.profile[type];
+      if (!url) return;
+      importCvLink(`cv-${type}`, type, url);
+    });
+  });
+
+  document.querySelectorAll('[data-connect]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.dataset.connect;
+      const url = S.profile[type];
+      if (!url) {
+        showError(`No ${type === 'linkedin' ? 'LinkedIn' : 'GitHub'} link saved in your profile yet. Paste a link or add one on the Profile page.`);
+        return;
+      }
+      const icon = btn.querySelector('i');
+      const originalClass = icon.className;
+      icon.className = 'fas fa-circle-notch fa-spin';
+      btn.disabled = true;
+      setTimeout(() => {
+        icon.className = originalClass;
+        btn.disabled = false;
+        importCvLink(`cv-${type}`, type, url);
+      }, 700);
+    });
+  });
+}
+
+function normalizeUrl(url) {
+  if (!url) return '';
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
+function validateUrl(url, type) {
+  try {
+    const host = new URL(url).hostname;
+    const domain = type === 'linkedin' ? 'linkedin.com' : 'github.com';
+    return host === domain || host.endsWith(`.${domain}`);
+  } catch (e) {
+    return false;
+  }
+}
+
+function extractUsername(url, type) {
+  const clean = url.replace(/\/+$/, '');
+  const parts = clean.split('/').filter(Boolean);
+  let last = '';
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const part = parts[i].split('?')[0].split('#')[0];
+    if (!part || ['in', 'profile', 'company', 'orgs'].includes(part)) continue;
+    last = part;
+    break;
+  }
+  return last || (type === 'linkedin' ? 'profile' : 'user');
+}
+
+function importCvLink(target, type, url) {
+  const input = document.querySelector(`[data-url-input="${target}"]`);
+  if (input && !input.value.trim()) input.value = url;
+  const btn = document.querySelector(`[data-import-btn="${target}"]`);
+  if (btn) {
+    btn.disabled = true;
+    btn.querySelector('i').className = 'fas fa-circle-notch fa-spin';
+  }
+  setTimeout(() => {
+    const label = `${type === 'linkedin' ? 'LinkedIn' : 'GitHub'}: ${extractUsername(url, type)}`;
+    S.cvSource = { type, label, url };
+    const state = document.querySelector(`[data-imported-state="${target}"]`);
+    if (state) {
+      state.hidden = false;
+      state.querySelector('[data-imported-label]').textContent = label;
+    }
+    if (btn) {
+      btn.disabled = false;
+      btn.querySelector('i').className = 'fas fa-arrow-down';
+    }
+    showToast(`${label} imported as CV source`, 'success');
+    updateAnalyzeBtn();
+  }, 800);
+}
+
+function removeCvImport(target) {
+  if (S.cvSource && `cv-${S.cvSource.type}` === target) S.cvSource = null;
+  const state = document.querySelector(`[data-imported-state="${target}"]`);
+  if (state) state.hidden = true;
+  const input = document.querySelector(`[data-url-input="${target}"]`);
+  if (input) input.value = '';
+  updateAnalyzeBtn();
+}
+
+function importJobLink(url) {
+  const btn = document.querySelector('[data-import-btn="jd-linkedin"]');
+  const input = document.querySelector('[data-url-input="jd-linkedin"]');
+  if (input && !input.value.trim()) input.value = url;
+  btn.disabled = true;
+  btn.querySelector('i').className = 'fas fa-circle-notch fa-spin';
+  setTimeout(() => {
+    const jdText = generateMockJobDescription();
+    const ta = document.getElementById('jdTextarea');
+    ta.value = jdText;
+    S.jdText = jdText;
+    S.jdSource = { url };
+    document.getElementById('jdCharCount').textContent = jdText.length;
+    const state = document.getElementById('jdImportedState');
+    if (state) {
+      state.hidden = false;
+      state.querySelector('[data-imported-label]').textContent = 'LinkedIn posting imported';
+    }
+    btn.disabled = false;
+    btn.querySelector('i').className = 'fas fa-arrow-down';
+    showToast('Job description imported from LinkedIn posting', 'success');
+    updateAnalyzeBtn();
+  }, 1000);
+}
+
+function removeJdImport() {
+  S.jdSource = null;
+  document.getElementById('jdImportedState').hidden = true;
+  document.getElementById('jdTextarea').value = '';
+  S.jdText = '';
+  document.getElementById('jdCharCount').textContent = '0';
+  updateAnalyzeBtn();
+}
+
+function generateMockJobDescription() {
+  return `Senior Software Engineer - Machine Learning
+
+About the role:
+We are looking for a Senior Software Engineer to join our ML Platform team. You will build scalable data pipelines, deploy machine learning models to production, and collaborate closely with data scientists and product teams.
+
+Responsibilities:
+- Design and build REST APIs and microservices for ML feature serving
+- Deploy and monitor ML models on AWS using Docker and Kubernetes
+- Optimize data pipelines processing millions of events per day
+- Work with SQL and NoSQL databases (PostgreSQL, MongoDB)
+- Implement CI/CD pipelines for automated model training and deployment
+- Mentor junior engineers and drive technical design reviews
+
+Requirements:
+- 5+ years of experience in Python and backend development
+- Strong knowledge of machine learning fundamentals (TensorFlow or PyTorch)
+- Experience with AWS, Docker, Kubernetes and MLOps practices
+- Solid understanding of data analysis, statistics and SQL
+- Experience building and consuming RESTful APIs
+- Excellent problem-solving and communication skills
+
+Nice to have:
+- Experience with Spark, Kafka or Airflow
+- GraphQL, TypeScript or React
+- Terraform or Infrastructure as Code
+- Experience with agile development methodologies`;
+}
+
+function renderProfileHints() {
+  ['linkedin', 'github'].forEach(type => {
+    const hint = document.querySelector(`[data-profile-hint="${type}"]`);
+    if (!hint) return;
+    const linkEl = hint.querySelector('a');
+    if (S.profile[type]) {
+      hint.hidden = false;
+      linkEl.textContent = S.profile[type];
+      linkEl.href = S.profile[type];
+    } else {
+      hint.hidden = true;
+    }
+  });
+}
+
+function initProfile() {
+  document.getElementById('profileLinkedin').value = S.profile.linkedin || '';
+  document.getElementById('profileGithub').value = S.profile.github || '';
+  renderProfileStatus();
+  renderProfileHints();
+  document.getElementById('saveProfileBtn').addEventListener('click', () => {
+    const linkedin = normalizeUrl(document.getElementById('profileLinkedin').value.trim());
+    const github = normalizeUrl(document.getElementById('profileGithub').value.trim());
+    if (linkedin && !validateUrl(linkedin, 'linkedin')) {
+      showError('Please enter a valid LinkedIn URL');
+      return;
+    }
+    if (github && !validateUrl(github, 'github')) {
+      showError('Please enter a valid GitHub URL');
+      return;
+    }
+    S.profile = { linkedin, github };
+    localStorage.setItem('sm_profile', JSON.stringify(S.profile));
+    renderProfileStatus();
+    renderProfileHints();
+    showToast('Profile saved successfully', 'success');
+  });
+}
+
+function renderProfileStatus() {
+  ['linkedin', 'github'].forEach(type => {
+    const badge = document.getElementById(`${type}Status`);
+    const connected = !!S.profile[type];
+    badge.className = `status-badge ${connected ? 'connected' : 'not-connected'}`;
+    badge.textContent = connected ? 'Connected' : 'Not connected';
+  });
+}
+
 function initCharCounter() {
   const ta = document.getElementById('jdTextarea');
   ta.addEventListener('input', () => {
@@ -201,12 +454,13 @@ function initAnalyzeButton() {
 
 function updateAnalyzeBtn() {
   const btn = document.getElementById('analyzeBtn');
-  const ready = S.file && S.jdText.trim().length > 0 && !S.analyzing;
+  const cvReady = !!S.file || !!S.cvSource;
+  const ready = cvReady && S.jdText.trim().length > 0 && !S.analyzing;
   btn.disabled = !ready;
 }
 
 function runAnalysis() {
-  if (S.analyzing || !S.file || !S.jdText.trim()) return;
+  if (S.analyzing || (!S.file && !S.cvSource) || !S.jdText.trim()) return;
   S.analyzing = true;
   updateAnalyzeBtn();
   document.getElementById('errorToast').hidden = true;
@@ -612,7 +866,7 @@ function saveHistory(score) {
   const entry = {
     id: Date.now(),
     date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    cvName: S.file ? S.file.name : 'Unknown',
+    cvName: S.file ? S.file.name : (S.cvSource ? S.cvSource.label : 'Unknown'),
     mode: MODES.find(m => m.id === S.mode)?.title || 'Unknown',
     score
   };
@@ -669,6 +923,10 @@ function initNewAnalysis() {
 
 function resetAnalysis() {
   clearFile();
+  S.cvSource = null;
+  S.jdSource = null;
+  document.querySelectorAll('[data-imported-state]').forEach(el => { el.hidden = true; });
+  document.querySelectorAll('[data-url-input]').forEach(el => { el.value = ''; });
   document.getElementById('jdTextarea').value = '';
   S.jdText = '';
   document.getElementById('jdCharCount').textContent = '0';

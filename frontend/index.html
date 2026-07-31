@@ -27,6 +27,7 @@
           <a href="#" class="nav-link active" data-page="home"><i class="fas fa-home"></i> Home</a>
           <a href="#" class="nav-link" data-page="dashboard"><i class="fas fa-chart-bar"></i> Dashboard</a>
           <a href="#" class="nav-link" data-page="history"><i class="fas fa-clock-rotate"></i> History</a>
+          <a href="#" class="nav-link" data-page="profile"><i class="fas fa-user"></i> Profile</a>
           <a href="#" class="nav-link" data-page="pricing"><i class="fas fa-tag"></i> Pricing</a>
         </div>
         <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
@@ -65,6 +66,7 @@
               <a href="#" data-page="home">Home</a>
               <a href="#" data-page="dashboard">Dashboard</a>
               <a href="#" data-page="history">History</a>
+              <a href="#" data-page="profile">Profile</a>
               <a href="#" data-page="pricing">Pricing</a>
             </div>
             <p class="footer-copy">&copy; 2026 SkillMatch Pro. All rights reserved.</p>
@@ -111,10 +113,68 @@
                 </div>
               </div>
               <div class="tab-content" data-tab-content="cv-linkedin">
-                <p class="tab-placeholder"><i class="fab fa-linkedin"></i> Connect your LinkedIn profile to import your CV automatically.</p>
+                <div class="sub-tabs">
+                  <div class="sub-tab-bar">
+                    <button class="sub-tab active" data-sub="connect"><i class="fas fa-link"></i> Connect</button>
+                    <button class="sub-tab" data-sub="link"><i class="fas fa-paste"></i> Paste Link</button>
+                  </div>
+                  <div class="sub-panel active" data-sub-panel="connect">
+                    <div class="connect-box">
+                      <i class="fab fa-linkedin connect-icon"></i>
+                      <p class="connect-text">Connect your LinkedIn profile to import your CV automatically.</p>
+                      <button class="btn btn-secondary" data-connect="linkedin"><i class="fab fa-linkedin"></i> Connect LinkedIn</button>
+                    </div>
+                  </div>
+                  <div class="sub-panel" data-sub-panel="link">
+                    <div class="link-input-row">
+                      <i class="fab fa-linkedin"></i>
+                      <input type="url" class="input-text" placeholder="Paste your LinkedIn profile URL..." data-url-input="cv-linkedin">
+                      <button class="btn btn-primary" data-import-btn="cv-linkedin"><i class="fas fa-arrow-down"></i> Import</button>
+                    </div>
+                    <div class="profile-hint" data-profile-hint="linkedin" hidden>
+                      <i class="fas fa-user"></i>
+                      <a data-profile-link href="#" target="_blank" rel="noopener"></a>
+                      <button class="btn btn-secondary btn-sm" data-use-profile="linkedin"><i class="fas fa-rotate-left"></i> Use default</button>
+                    </div>
+                  </div>
+                  <div class="imported-state" data-imported-state="cv-linkedin" hidden>
+                    <i class="fas fa-check-circle"></i>
+                    <span data-imported-label></span>
+                    <button class="btn-icon btn-danger-icon" data-remove-import="cv-linkedin" aria-label="Remove imported link"><i class="fas fa-xmark"></i></button>
+                  </div>
+                </div>
               </div>
               <div class="tab-content" data-tab-content="cv-github">
-                <p class="tab-placeholder"><i class="fab fa-github"></i> Connect your GitHub to analyze your repositories.</p>
+                <div class="sub-tabs">
+                  <div class="sub-tab-bar">
+                    <button class="sub-tab active" data-sub="connect"><i class="fas fa-link"></i> Connect</button>
+                    <button class="sub-tab" data-sub="link"><i class="fas fa-paste"></i> Paste Link</button>
+                  </div>
+                  <div class="sub-panel active" data-sub-panel="connect">
+                    <div class="connect-box">
+                      <i class="fab fa-github connect-icon"></i>
+                      <p class="connect-text">Connect your GitHub to analyze your repositories and projects.</p>
+                      <button class="btn btn-secondary" data-connect="github"><i class="fab fa-github"></i> Connect GitHub</button>
+                    </div>
+                  </div>
+                  <div class="sub-panel" data-sub-panel="link">
+                    <div class="link-input-row">
+                      <i class="fab fa-github"></i>
+                      <input type="url" class="input-text" placeholder="Paste your GitHub profile URL..." data-url-input="cv-github">
+                      <button class="btn btn-primary" data-import-btn="cv-github"><i class="fas fa-arrow-down"></i> Import</button>
+                    </div>
+                    <div class="profile-hint" data-profile-hint="github" hidden>
+                      <i class="fas fa-user"></i>
+                      <a data-profile-link href="#" target="_blank" rel="noopener"></a>
+                      <button class="btn btn-secondary btn-sm" data-use-profile="github"><i class="fas fa-rotate-left"></i> Use default</button>
+                    </div>
+                  </div>
+                  <div class="imported-state" data-imported-state="cv-github" hidden>
+                    <i class="fas fa-check-circle"></i>
+                    <span data-imported-label></span>
+                    <button class="btn-icon btn-danger-icon" data-remove-import="cv-github" aria-label="Remove imported link"><i class="fas fa-xmark"></i></button>
+                  </div>
+                </div>
               </div>
               <div class="tab-content" data-tab-content="cv-text">
                 <textarea class="input-textarea" placeholder="Paste your CV text here..." rows="6"></textarea>
@@ -142,7 +202,17 @@
                 </div>
               </div>
               <div class="tab-content" data-tab-content="jd-linkedin">
-                <p class="tab-placeholder"><i class="fab fa-linkedin"></i> Import job description from a LinkedIn posting.</p>
+                <div class="link-input-row">
+                  <i class="fab fa-linkedin"></i>
+                  <input type="url" class="input-text" placeholder="Paste the LinkedIn job posting URL..." data-url-input="jd-linkedin">
+                  <button class="btn btn-primary" data-import-btn="jd-linkedin"><i class="fas fa-arrow-down"></i> Import Job</button>
+                </div>
+                <p class="field-hint"><i class="fas fa-circle-info"></i> Paste the link to any LinkedIn job posting to import the full description for analysis.</p>
+                <div class="imported-state" id="jdImportedState" data-imported-state="jd-linkedin" hidden>
+                  <i class="fas fa-check-circle"></i>
+                  <span data-imported-label>LinkedIn posting imported</span>
+                  <button class="btn-icon btn-danger-icon" data-remove-import="jd-linkedin" aria-label="Remove imported job"><i class="fas fa-xmark"></i></button>
+                </div>
               </div>
               <div class="tab-content active" data-tab-content="jd-text">
                 <div class="textarea-wrapper">
@@ -203,7 +273,7 @@
               <div class="score-details" id="scoreDetails">
                 <div class="score-stat"><span class="stat-label">Matched</span><span class="stat-value stat-matched" id="statMatched">0</span></div>
                 <div class="score-stat"><span class="stat-label">Missing</span><span class="stat-value stat-missing" id="statMissing">0</span></div>
-                <div class="score-stat"><span class="stat-label">Keywords</span><span class="stat-value" id="statKeywords">0</span></div>
+                <div class="score-stat"><span class="stat-label">Keywords</span><span class="stat-value stat-keywords" id="statKeywords">0</span></div>
               </div>
             </div>
 
@@ -299,6 +369,49 @@
         </div>
       </section>
 
+      <!-- ========== PROFILE PAGE ========== -->
+      <section id="page-profile" class="page">
+        <div class="page-header">
+          <div>
+            <h1 class="page-title"><i class="fas fa-user"></i> Profile</h1>
+            <p class="page-subtitle">Save your professional profile links to use as default CV sources</p>
+          </div>
+        </div>
+
+        <div class="profile-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fab fa-linkedin"></i> LinkedIn</h3>
+              <span class="status-badge not-connected" id="linkedinStatus">Not connected</span>
+            </div>
+            <div class="card-body">
+              <label class="field-label" for="profileLinkedin">Profile URL</label>
+              <input type="url" id="profileLinkedin" class="input-text" placeholder="https://www.linkedin.com/in/username">
+              <p class="field-hint">Used as the default CV source on the analysis page when no file or link is provided.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fab fa-github"></i> GitHub</h3>
+              <span class="status-badge not-connected" id="githubStatus">Not connected</span>
+            </div>
+            <div class="card-body">
+              <label class="field-label" for="profileGithub">Profile URL</label>
+              <input type="url" id="profileGithub" class="input-text" placeholder="https://github.com/username">
+              <p class="field-hint">Used to pull your projects when no file or link is provided.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body save-row">
+            <p><i class="fas fa-circle-info"></i> Saved links act as defaults on the CV Analysis page when no CV is provided.</p>
+            <button class="btn btn-primary" id="saveProfileBtn"><i class="fas fa-floppy-disk"></i> Save Profile</button>
+          </div>
+        </div>
+      </section>
+
       <!-- ========== PRICING PAGE ========== -->
       <section id="page-pricing" class="page">
         <div class="page-header text-center">
@@ -363,6 +476,7 @@
     </main>
   </div>
 
+  <div id="toast-container"></div>
   <script src="script.js"></script>
 </body>
 </html>

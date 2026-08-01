@@ -1,332 +1,883 @@
-const S = {
-  page: 'home',
-  theme: 'dark',
-  mode: 'core',
-  file: null,
-  cvTab: 'upload',
-  jdTab: 'jd-text',
-  jdText: '',
-  cvSource: null,
-  jdSource: null,
-  profile: JSON.parse(localStorage.getItem('sm_profile') || '{}'),
-  analyzing: false,
-  history: JSON.parse(localStorage.getItem('sm_history') || '[]')
-};
+/* ============================================================
+   SkillMatch Pro — Frontend application
+   ------------------------------------------------------------
+   Vanilla JavaScript (ES6+). No frameworks, no backend.
 
-const MODES = [
-  { id: 'core', icon: 'fa-percentage', title: 'Core Match', desc: 'Overall match score & skill breakdown' },
-  { id: 'techstack', icon: 'fa-code', title: 'Tech Stack', desc: 'Extract & compare technologies' },
-  { id: 'experience', icon: 'fa-briefcase', title: 'Experience', desc: 'Years, relevance & gaps' },
-  { id: 'achievements', icon: 'fa-trophy', title: 'Achievements', desc: 'Quantifiable wins & action verbs' },
-  { id: 'structure', icon: 'fa-file-lines', title: 'Resume Structure', desc: 'Sections, readability & format' },
-  { id: 'interview', icon: 'fa-question', title: 'Tech Interview', desc: 'Technical questions & answers' },
-  { id: 'salary', icon: 'fa-dollar-sign', title: 'Salary Intel', desc: 'Market rate for your stack' }
-];
+   BACKEND INTEGRATION NOTE
+   ------------------------
+   The analysis pipeline below is SIMULATED with mock data so the
+   UI is fully functional without a server. Every place where a
+   future FastAPI request will be needed is marked with a
+   "TODO: FastAPI" comment so it can be swapped in later with
+   minimal changes.
+   ============================================================ */
 
-const MOCK_KEYWORDS = {
-  matched: ['Python', 'Machine Learning', 'Data Analysis', 'SQL', 'AWS', 'TensorFlow', 'Agile', 'Deep Learning', 'NLP', 'Statistics', 'PyTorch', 'Git', 'Linux', 'REST APIs', 'Problem Solving'],
-  missing: ['Kubernetes', 'Docker', 'CI/CD', 'Terraform', 'GraphQL', 'TypeScript', 'Microservices', 'Redis', 'Kafka', 'Spark', 'Airflow', 'MLOps', 'SageMaker', 'Kubeflow']
-};
+(() => {
+  'use strict';
 
-document.addEventListener('DOMContentLoaded', () => {
-  initTheme();
-  initNavigation();
-  initTabs();
-  initSubTabs();
-  initUpload();
-  initCharCounter();
-  initModeSelector();
-  initAnalyzeButton();
-  initHomeFeatures();
-  initNewAnalysis();
-  initHistory();
-  initSideActions();
-  initLinkImports();
-  initProfile();
-  initMobileMenu();
-});
+  /* ==========================================================
+     CONSTANTS
+     ========================================================== */
 
-function initTheme() {
-  const saved = localStorage.getItem('sm_theme');
-  if (saved) S.theme = saved;
-  applyTheme();
-  document.getElementById('themeToggle').addEventListener('click', () => {
-    S.theme = S.theme === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('sm_theme', S.theme);
+  const MODES = [
+    { id: 'core', icon: 'fa-percentage', title: 'Core Match', desc: 'Overall match score & skill breakdown' },
+    { id: 'techstack', icon: 'fa-code', title: 'Tech Stack', desc: 'Extract & compare technologies' },
+    { id: 'experience', icon: 'fa-briefcase', title: 'Experience', desc: 'Years, relevance & gaps' },
+    { id: 'achievements', icon: 'fa-trophy', title: 'Achievements', desc: 'Quantifiable wins & action verbs' },
+    { id: 'structure', icon: 'fa-file-lines', title: 'Resume Structure', desc: 'Sections, readability & format' },
+    { id: 'interview', icon: 'fa-question', title: 'Tech Interview', desc: 'Technical questions & answers' },
+    { id: 'salary', icon: 'fa-dollar-sign', title: 'Salary Intel', desc: 'Market rate for your stack' }
+  ];
+
+  const MOCK_KEYWORDS = {
+    matched: ['Python', 'Machine Learning', 'Data Analysis', 'SQL', 'AWS', 'TensorFlow', 'Agile', 'Deep Learning', 'NLP', 'Statistics', 'PyTorch', 'Git', 'Linux', 'REST APIs', 'Problem Solving'],
+    missing: ['Kubernetes', 'Docker', 'CI/CD', 'Terraform', 'GraphQL', 'TypeScript', 'Microservices', 'Redis', 'Kafka', 'Spark', 'Airflow', 'MLOps', 'SageMaker', 'Kubeflow']
+  };
+
+  const CV_MAX_MB = 10;
+  const JD_MAX_MB = 10;
+  const HISTORY_LIMIT = 100;
+
+  const $ = (id) => document.getElementById(id);
+
+  /* ==========================================================
+     STATE
+     ========================================================== */
+
+  const state = {
+    page: 'home',
+    theme: 'dark',
+    mode: 'core',
+    cvTab: 'cv-upload',
+    jdTab: 'jd-text',
+    cvFile: null,
+    jdFile: null,
+    cvSource: null,
+    jdSource: null,
+    cvText: '',
+    jdText: '',
+    analyzing: false,
+    historyQuery: '',
+    runTimers: [],
+    lastResult: null,
+    reportData: null,
+    profile: storageGet('sm_profile', {}),
+    history: storageGet('sm_history', [])
+  };
+
+  /* ==========================================================
+     SAFE STORAGE HELPERS
+     (wrapped so corrupted localStorage never crashes the app)
+     ========================================================== */
+
+  function storageGet(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function storageSet(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      /* storage unavailable (private mode / quota) — ignore */
+    }
+  }
+
+  function storageGetRaw(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function storageSetRaw(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) { /* ignore */ }
+  }
+
+  /* ==========================================================
+     UTILITIES
+     ========================================================== */
+
+  function escapeHtml(str) {
+    return String(str ?? '').replace(/[&<>"']/g, (c) => (
+      { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+  }
+
+  function formatClock(date = new Date()) {
+    return [date.getHours(), date.getMinutes(), date.getSeconds()]
+      .map((n) => String(n).padStart(2, '0'))
+      .join(':');
+  }
+
+  function cap(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function clampScore(n) {
+    return Math.max(0, Math.min(100, Math.round(n)));
+  }
+
+  function normalizeUrl(url) {
+    if (!url) return '';
+    return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+  }
+
+  function validateUrl(url, type) {
+    try {
+      const host = new URL(url).hostname;
+      const domain = type === 'linkedin' ? 'linkedin.com' : 'github.com';
+      return host === domain || host.endsWith(`.${domain}`);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function extractUsername(url, type) {
+    const clean = url.replace(/\/+$/, '');
+    const parts = clean.split('/').filter(Boolean);
+    let last = '';
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const part = parts[i].split('?')[0].split('#')[0];
+      if (!part || ['in', 'profile', 'company', 'orgs'].includes(part)) continue;
+      last = part;
+      break;
+    }
+    return last || (type === 'linkedin' ? 'profile' : 'user');
+  }
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function currentMode() {
+    return MODES.find((m) => m.id === state.mode) || MODES[0];
+  }
+
+  /* ==========================================================
+     THEME
+     ========================================================== */
+
+  function initTheme() {
+    const saved = storageGetRaw('sm_theme');
+    state.theme = saved === 'light' ? 'light' : 'dark';
     applyTheme();
-  });
-}
-
-function applyTheme() {
-  document.documentElement.setAttribute('data-theme', S.theme);
-}
-
-function initNavigation() {
-  document.querySelectorAll('[data-page]').forEach(el => {
-    el.addEventListener('click', e => {
-      e.preventDefault();
-      navigateTo(el.dataset.page);
+    $('themeToggle').addEventListener('click', () => {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      storageSetRaw('sm_theme', state.theme);
+      applyTheme();
     });
-  });
-  navigateTo('home');
-}
+  }
 
-function navigateTo(page) {
-  S.page = page;
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  const navLink = document.querySelector(`.nav-link[data-page="${page}"]`);
-  if (navLink) navLink.classList.add('active');
-  document.getElementById('navLinks')?.classList.remove('open');
-  if (page === 'history') renderHistory();
-  if (page === 'dashboard') renderProfileHints();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+  function applyTheme() {
+    document.documentElement.setAttribute('data-theme', state.theme);
+  }
 
-function initTabs() {
-  document.querySelectorAll('.tab-bar').forEach(bar => {
-    bar.addEventListener('click', e => {
+  /* ==========================================================
+     NAVIGATION
+     ========================================================== */
+
+  function initNavigation() {
+    document.querySelectorAll('[data-page]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        navigateTo(el.dataset.page);
+      });
+    });
+    navigateTo('home');
+  }
+
+  function navigateTo(page) {
+    if (!document.getElementById(`page-${page}`)) return;
+    state.page = page;
+
+    document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
+    $(`page-${page}`).classList.add('active');
+
+    document.querySelectorAll('.nav-link').forEach((l) => {
+      const isActive = l.dataset.page === page;
+      l.classList.toggle('active', isActive);
+      if (isActive) l.setAttribute('aria-current', 'page');
+      else l.removeAttribute('aria-current');
+    });
+
+    closeMobileMenu();
+
+    if (page === 'history') renderHistory();
+    if (page === 'dashboard') renderProfileHints();
+    if (page === 'report') {
+      const active = document.querySelector('.report-tab.active');
+      if (active) selectReportTab(active.dataset.reportTab);
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function initMobileMenu() {
+    $('mobileMenuBtn').addEventListener('click', () => {
+      const open = $('navLinks').classList.toggle('open');
+      $('mobileMenuBtn').setAttribute('aria-expanded', String(open));
+    });
+  }
+
+  function closeMobileMenu() {
+    $('navLinks').classList.remove('open');
+    $('mobileMenuBtn').setAttribute('aria-expanded', 'false');
+  }
+
+  /* ==========================================================
+     TABS
+     ========================================================== */
+
+  function initTabs() {
+    document.querySelectorAll('.tab-bar').forEach(setupTabBar);
+  }
+
+  function setupTabBar(bar) {
+    bar.addEventListener('click', (e) => {
       const tab = e.target.closest('.tab');
       if (!tab) return;
       const barEl = tab.closest('.tab-bar');
-      const isCV = barEl.id === 'cvTabs';
-      const isJD = barEl.id === 'jdTabs';
-      barEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      const tabId = tab.dataset.tab;
-      const parentCard = barEl.closest('.card');
-      parentCard.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      const content = parentCard.querySelector(`[data-tab-content="${tabId}"]`);
-      if (content) content.classList.add('active');
-      if (isCV) S.cvTab = tabId;
-      if (isJD) S.jdTab = tabId;
+      barEl.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
+      const parent = barEl.closest('.card');
+      parent.querySelectorAll('.tab-content').forEach((c) => c.classList.toggle('active', c.dataset.tabContent === tab.dataset.tab));
+      if (barEl.id === 'cvTabs') state.cvTab = tab.dataset.tab;
+      if (barEl.id === 'jdTabs') state.jdTab = tab.dataset.tab;
     });
-  });
-  document.querySelector('#cvTabs .tab.active')?.click();
-  document.querySelector('#jdTabs .tab.active')?.click();
-}
-
-function initUpload() {
-  const area = document.getElementById('uploadArea');
-  const input = document.getElementById('cvFileInput');
-  area.addEventListener('click', () => input.click());
-  area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('drag-over'); });
-  area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
-  area.addEventListener('drop', e => {
-    e.preventDefault();
-    area.classList.remove('drag-over');
-    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-  });
-  input.addEventListener('change', () => {
-    if (input.files.length) handleFile(input.files[0]);
-  });
-  document.getElementById('removeFileBtn').addEventListener('click', e => {
-    e.stopPropagation();
-    clearFile();
-  });
-}
-
-function handleFile(file) {
-  const ext = file.name.split('.').pop().toLowerCase();
-  if (!['pdf', 'docx'].includes(ext)) {
-    showError('Please select a PDF or DOCX file');
-    return;
   }
-  if (file.size > 10 * 1024 * 1024) {
-    showError('File size must be less than 10MB');
-    return;
-  }
-  S.file = file;
-  const area = document.getElementById('uploadArea');
-  area.classList.add('has-file');
-  document.getElementById('uploadContent').hidden = true;
-  document.getElementById('fileInfo').hidden = false;
-  document.getElementById('fileName').textContent = file.name;
-  document.getElementById('errorToast').hidden = true;
-  updateAnalyzeBtn();
-}
 
-function clearFile() {
-  S.file = null;
-  document.getElementById('cvFileInput').value = '';
-  document.getElementById('uploadArea').classList.remove('has-file');
-  document.getElementById('uploadContent').hidden = false;
-  document.getElementById('fileInfo').hidden = true;
-  updateAnalyzeBtn();
-}
-
-function initSubTabs() {
-  document.querySelectorAll('.sub-tab-bar').forEach(bar => {
-    bar.addEventListener('click', e => {
-      const tab = e.target.closest('.sub-tab');
-      if (!tab) return;
-      const wrap = bar.closest('.sub-tabs');
-      wrap.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      wrap.querySelectorAll('.sub-panel').forEach(p => {
-        p.classList.toggle('active', p.dataset.subPanel === tab.dataset.sub);
+  function initSubTabs() {
+    document.querySelectorAll('.sub-tab-bar').forEach((bar) => {
+      bar.addEventListener('click', (e) => {
+        const tab = e.target.closest('.sub-tab');
+        if (!tab) return;
+        const wrap = bar.closest('.sub-tabs');
+        wrap.querySelectorAll('.sub-tab').forEach((t) => t.classList.toggle('active', t === tab));
+        wrap.querySelectorAll('.sub-panel').forEach((p) => p.classList.toggle('active', p.dataset.subPanel === tab.dataset.sub));
       });
     });
-  });
-}
+  }
 
-function initLinkImports() {
-  document.querySelectorAll('[data-import-btn]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.dataset.importBtn;
-      const input = document.querySelector(`[data-url-input="${target}"]`);
-      if (!input || !input.value.trim()) {
-        showError('Please paste a link first');
-        return;
+  /* ==========================================================
+     UPLOADS (frontend-only — files are kept in state for a
+     future POST /analyze request, never uploaded today)
+     ========================================================== */
+
+  const cvUpload = {
+    areaId: 'uploadArea', inputId: 'cvFileInput',
+    contentId: 'uploadContent', infoId: 'fileInfo',
+    nameId: 'fileName', removeId: 'removeFileBtn',
+    exts: ['pdf', 'docx'], maxMb: CV_MAX_MB
+  };
+
+  const jdUpload = {
+    areaId: 'jdUploadArea', inputId: 'jdFileInput',
+    contentId: 'jdUploadContent', infoId: 'jdFileInfo',
+    nameId: 'jdFileName', removeId: 'removeJdFileBtn',
+    exts: ['pdf', 'docx', 'txt'], maxMb: JD_MAX_MB
+  };
+
+  function initUploads() {
+    setupUploadArea(cvUpload, handleCvFile, removeCvFile);
+    setupUploadArea(jdUpload, handleJdFile, removeJdFile);
+  }
+
+  function setupUploadArea(opts, onFile, onRemove) {
+    const area = $(opts.areaId);
+    const input = $(opts.inputId);
+
+    area.addEventListener('click', () => input.click());
+    area.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        input.click();
       }
-      const type = target.split('-')[1];
-      const url = normalizeUrl(input.value.trim());
-      if (!validateUrl(url, type)) {
-        showError(`Please enter a valid ${type === 'linkedin' ? 'LinkedIn' : 'GitHub'} URL`);
-        return;
-      }
-      if (target === 'jd-linkedin') importJobLink(url);
-      else importCvLink(target, type, url);
     });
-  });
 
-  document.querySelectorAll('[data-remove-import]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.dataset.removeImport;
-      if (target === 'jd-linkedin') removeJdImport();
-      else removeCvImport(target);
+    // dragDepth counter prevents flicker when dragging over children
+    let dragDepth = 0;
+    area.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragDepth++;
+      area.classList.add('drag-over');
     });
-  });
-
-  document.querySelectorAll('[data-use-profile]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const type = btn.dataset.useProfile;
-      const url = S.profile[type];
-      if (!url) return;
-      importCvLink(`cv-${type}`, type, url);
+    area.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      area.classList.add('drag-over');
     });
-  });
+    area.addEventListener('dragleave', () => {
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (dragDepth === 0) area.classList.remove('drag-over');
+    });
+    area.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragDepth = 0;
+      area.classList.remove('drag-over');
+      if (e.dataTransfer.files.length) onFile(e.dataTransfer.files[0]);
+    });
 
-  document.querySelectorAll('[data-connect]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const type = btn.dataset.connect;
-      const url = S.profile[type];
-      if (!url) {
-        showError(`No ${type === 'linkedin' ? 'LinkedIn' : 'GitHub'} link saved in your profile yet. Paste a link or add one on the Profile page.`);
-        return;
-      }
-      const icon = btn.querySelector('i');
-      const originalClass = icon.className;
-      icon.className = 'fas fa-circle-notch fa-spin';
+    input.addEventListener('change', () => {
+      if (input.files.length) onFile(input.files[0]);
+    });
+
+    $(opts.removeId).addEventListener('click', (e) => {
+      e.stopPropagation();
+      onRemove();
+    });
+  }
+
+  function validateFile(file, opts) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!opts.exts.includes(ext)) return `Please select a ${opts.exts.join(' or ')} file`;
+    if (file.size > opts.maxMb * 1024 * 1024) return `File size must be less than ${opts.maxMb}MB`;
+    return null;
+  }
+
+  function showFileInArea(opts, file) {
+    $(opts.areaId).classList.add('has-file');
+    $(opts.contentId).hidden = true;
+    $(opts.infoId).hidden = false;
+    $(opts.nameId).textContent = file.name;
+  }
+
+  function clearFileInArea(opts) {
+    $(opts.inputId).value = '';
+    $(opts.areaId).classList.remove('has-file');
+    $(opts.contentId).hidden = false;
+    $(opts.infoId).hidden = true;
+  }
+
+  function handleCvFile(file) {
+    const err = validateFile(file, cvUpload);
+    if (err) { showError(err); return; }
+    // TODO: FastAPI — this file will be sent as `cv_file` in the POST /analyze FormData.
+    state.cvFile = file;
+    showFileInArea(cvUpload, file);
+    hideError();
+    updateAnalyzeBtn();
+  }
+
+  function removeCvFile() {
+    state.cvFile = null;
+    clearFileInArea(cvUpload);
+    updateAnalyzeBtn();
+  }
+
+  function handleJdFile(file) {
+    const err = validateFile(file, jdUpload);
+    if (err) { showError(err); return; }
+    // TODO: FastAPI — this file will be sent as `jd_file` in the POST /analyze FormData.
+    state.jdFile = file;
+    showFileInArea(jdUpload, file);
+    hideError();
+    updateAnalyzeBtn();
+  }
+
+  function removeJdFile() {
+    state.jdFile = null;
+    clearFileInArea(jdUpload);
+    updateAnalyzeBtn();
+  }
+
+  /* ==========================================================
+     TEXT AREAS & CHAR COUNTERS
+     ========================================================== */
+
+  function initCharCounters() {
+    $('cvTextarea').addEventListener('input', () => {
+      state.cvText = $('cvTextarea').value;
+      $('cvCharCount').textContent = state.cvText.length;
+      updateAnalyzeBtn();
+    });
+    $('jdTextarea').addEventListener('input', () => {
+      state.jdText = $('jdTextarea').value;
+      $('jdCharCount').textContent = state.jdText.length;
+      updateAnalyzeBtn();
+    });
+  }
+
+  /* ==========================================================
+     LINK IMPORTS (LinkedIn / GitHub) — simulated, frontend-only
+     ========================================================== */
+
+  function initLinkImports() {
+    document.querySelectorAll('[data-import-btn]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.importBtn;
+        const input = document.querySelector(`[data-url-input="${target}"]`);
+        if (!input || !input.value.trim()) {
+          showError('Please paste a link first');
+          return;
+        }
+        const type = target.split('-')[1];
+        const url = normalizeUrl(input.value.trim());
+        if (!validateUrl(url, type)) {
+          showError(`Please enter a valid ${type === 'linkedin' ? 'LinkedIn' : 'GitHub'} URL`);
+          return;
+        }
+        if (target === 'jd-linkedin') importJobLink(url);
+        else importCvLink(target, type, url);
+      });
+    });
+
+    document.querySelectorAll('[data-remove-import]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.removeImport;
+        if (target === 'jd-linkedin') removeJdImport();
+        else removeCvImport(target);
+      });
+    });
+
+    document.querySelectorAll('[data-use-profile]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const type = btn.dataset.useProfile;
+        const url = state.profile[type];
+        if (url) importCvLink(`cv-${type}`, type, url);
+      });
+    });
+
+    document.querySelectorAll('[data-connect]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const type = btn.dataset.connect;
+        const url = state.profile[type];
+        if (!url) {
+          showError(`No ${type === 'linkedin' ? 'LinkedIn' : 'GitHub'} link saved in your profile yet. Paste a link or add one on the Profile page.`);
+          return;
+        }
+        // Simulated OAuth connect delay — swap for a real flow later.
+        const icon = btn.querySelector('i');
+        const originalClass = icon.className;
+        icon.className = 'fas fa-circle-notch fa-spin';
+        btn.disabled = true;
+        setTimeout(() => {
+          icon.className = originalClass;
+          btn.disabled = false;
+          importCvLink(`cv-${type}`, type, url);
+        }, 700);
+      });
+    });
+  }
+
+  function importCvLink(target, type, url) {
+    const input = document.querySelector(`[data-url-input="${target}"]`);
+    if (input && !input.value.trim()) input.value = url;
+    const btn = document.querySelector(`[data-import-btn="${target}"]`);
+    if (btn) {
       btn.disabled = true;
-      setTimeout(() => {
-        icon.className = originalClass;
+      btn.querySelector('i').className = 'fas fa-circle-notch fa-spin';
+    }
+    setTimeout(() => {
+      const label = `${type === 'linkedin' ? 'LinkedIn' : 'GitHub'}: ${extractUsername(url, type)}`;
+      state.cvSource = { type, label, url };
+      const el = document.querySelector(`[data-imported-state="${target}"]`);
+      if (el) {
+        el.hidden = false;
+        el.querySelector('[data-imported-label]').textContent = label;
+      }
+      if (btn) {
         btn.disabled = false;
-        importCvLink(`cv-${type}`, type, url);
-      }, 700);
-    });
-  });
-}
-
-function normalizeUrl(url) {
-  if (!url) return '';
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
-}
-
-function validateUrl(url, type) {
-  try {
-    const host = new URL(url).hostname;
-    const domain = type === 'linkedin' ? 'linkedin.com' : 'github.com';
-    return host === domain || host.endsWith(`.${domain}`);
-  } catch (e) {
-    return false;
+        btn.querySelector('i').className = 'fas fa-arrow-down';
+      }
+      showToast(`${label} imported as CV source`, 'success');
+      updateAnalyzeBtn();
+    }, 800);
   }
-}
 
-function extractUsername(url, type) {
-  const clean = url.replace(/\/+$/, '');
-  const parts = clean.split('/').filter(Boolean);
-  let last = '';
-  for (let i = parts.length - 1; i >= 0; i--) {
-    const part = parts[i].split('?')[0].split('#')[0];
-    if (!part || ['in', 'profile', 'company', 'orgs'].includes(part)) continue;
-    last = part;
-    break;
+  function removeCvImport(target) {
+    if (state.cvSource && `cv-${state.cvSource.type}` === target) state.cvSource = null;
+    const el = document.querySelector(`[data-imported-state="${target}"]`);
+    if (el) el.hidden = true;
+    const input = document.querySelector(`[data-url-input="${target}"]`);
+    if (input) input.value = '';
+    updateAnalyzeBtn();
   }
-  return last || (type === 'linkedin' ? 'profile' : 'user');
-}
 
-function importCvLink(target, type, url) {
-  const input = document.querySelector(`[data-url-input="${target}"]`);
-  if (input && !input.value.trim()) input.value = url;
-  const btn = document.querySelector(`[data-import-btn="${target}"]`);
-  if (btn) {
+  function importJobLink(url) {
+    const btn = document.querySelector('[data-import-btn="jd-linkedin"]');
+    const input = document.querySelector('[data-url-input="jd-linkedin"]');
+    if (input && !input.value.trim()) input.value = url;
     btn.disabled = true;
     btn.querySelector('i').className = 'fas fa-circle-notch fa-spin';
-  }
-  setTimeout(() => {
-    const label = `${type === 'linkedin' ? 'LinkedIn' : 'GitHub'}: ${extractUsername(url, type)}`;
-    S.cvSource = { type, label, url };
-    const state = document.querySelector(`[data-imported-state="${target}"]`);
-    if (state) {
-      state.hidden = false;
-      state.querySelector('[data-imported-label]').textContent = label;
-    }
-    if (btn) {
+    setTimeout(() => {
+      const jdText = generateMockJobDescription();
+      const ta = $('jdTextarea');
+      ta.value = jdText;
+      state.jdText = jdText;
+      state.jdSource = { url };
+      $('jdCharCount').textContent = jdText.length;
+      const el = $('jdImportedState');
+      if (el) {
+        el.hidden = false;
+        el.querySelector('[data-imported-label]').textContent = 'LinkedIn posting imported';
+      }
       btn.disabled = false;
       btn.querySelector('i').className = 'fas fa-arrow-down';
-    }
-    showToast(`${label} imported as CV source`, 'success');
+      showToast('Job description imported from LinkedIn posting', 'success');
+      updateAnalyzeBtn();
+    }, 1000);
+  }
+
+  function removeJdImport() {
+    state.jdSource = null;
+    $('jdImportedState').hidden = true;
+    $('jdTextarea').value = '';
+    state.jdText = '';
+    $('jdCharCount').textContent = '0';
     updateAnalyzeBtn();
-  }, 800);
-}
+  }
 
-function removeCvImport(target) {
-  if (S.cvSource && `cv-${S.cvSource.type}` === target) S.cvSource = null;
-  const state = document.querySelector(`[data-imported-state="${target}"]`);
-  if (state) state.hidden = true;
-  const input = document.querySelector(`[data-url-input="${target}"]`);
-  if (input) input.value = '';
-  updateAnalyzeBtn();
-}
+  function renderProfileHints() {
+    ['linkedin', 'github'].forEach((type) => {
+      const hint = document.querySelector(`[data-profile-hint="${type}"]`);
+      if (!hint) return;
+      const linkEl = hint.querySelector('a');
+      if (state.profile[type]) {
+        hint.hidden = false;
+        linkEl.textContent = state.profile[type];
+        linkEl.href = state.profile[type];
+      } else {
+        hint.hidden = true;
+      }
+    });
+  }
 
-function importJobLink(url) {
-  const btn = document.querySelector('[data-import-btn="jd-linkedin"]');
-  const input = document.querySelector('[data-url-input="jd-linkedin"]');
-  if (input && !input.value.trim()) input.value = url;
-  btn.disabled = true;
-  btn.querySelector('i').className = 'fas fa-circle-notch fa-spin';
-  setTimeout(() => {
-    const jdText = generateMockJobDescription();
-    const ta = document.getElementById('jdTextarea');
-    ta.value = jdText;
-    S.jdText = jdText;
-    S.jdSource = { url };
-    document.getElementById('jdCharCount').textContent = jdText.length;
-    const state = document.getElementById('jdImportedState');
-    if (state) {
-      state.hidden = false;
-      state.querySelector('[data-imported-label]').textContent = 'LinkedIn posting imported';
-    }
-    btn.disabled = false;
-    btn.querySelector('i').className = 'fas fa-arrow-down';
-    showToast('Job description imported from LinkedIn posting', 'success');
+  /* ==========================================================
+     PROFILE
+     ========================================================== */
+
+  function initProfile() {
+    $('profileLinkedin').value = state.profile.linkedin || '';
+    $('profileGithub').value = state.profile.github || '';
+    renderProfileStatus();
+    renderProfileHints();
+
+    $('saveProfileBtn').addEventListener('click', () => {
+      const linkedin = normalizeUrl($('profileLinkedin').value.trim());
+      const github = normalizeUrl($('profileGithub').value.trim());
+      if (linkedin && !validateUrl(linkedin, 'linkedin')) {
+        showError('Please enter a valid LinkedIn URL');
+        return;
+      }
+      if (github && !validateUrl(github, 'github')) {
+        showError('Please enter a valid GitHub URL');
+        return;
+      }
+      state.profile = { linkedin, github };
+      storageSet('sm_profile', state.profile);
+      renderProfileStatus();
+      renderProfileHints();
+      showToast('Profile saved successfully', 'success');
+    });
+  }
+
+  function renderProfileStatus() {
+    ['linkedin', 'github'].forEach((type) => {
+      const badge = $(`${type}Status`);
+      const connected = !!state.profile[type];
+      badge.className = `status-badge ${connected ? 'connected' : 'not-connected'}`;
+      badge.textContent = connected ? 'Connected' : 'Not connected';
+    });
+  }
+
+  /* ==========================================================
+     MODE SELECTOR & HOME FEATURES
+     ========================================================== */
+
+  function initModeSelector() {
+    const grid = $('modeGrid');
+    MODES.forEach((m) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `mode-card ${m.id === state.mode ? 'active' : ''}`;
+      card.dataset.mode = m.id;
+      card.innerHTML = `<i class="fas ${m.icon}"></i><h4>${m.title}</h4><p>${m.desc}</p>`;
+      card.addEventListener('click', () => selectMode(m.id));
+      grid.appendChild(card);
+    });
+  }
+
+  function initHomeFeatures() {
+    const grid = $('homeFeatureGrid');
+    MODES.forEach((m) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'feature-card';
+      card.innerHTML = `<i class="fas ${m.icon}"></i><h4>${m.title}</h4><p>${m.desc}</p>`;
+      card.addEventListener('click', () => {
+        selectMode(m.id);
+        navigateTo('dashboard');
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  function selectMode(id) {
+    state.mode = id;
+    document.querySelectorAll('.mode-card').forEach((c) => {
+      c.classList.toggle('active', c.dataset.mode === id);
+    });
+    $('analyzeBtnText').textContent = `Run ${currentMode().title} Analysis`;
     updateAnalyzeBtn();
-  }, 1000);
-}
+  }
 
-function removeJdImport() {
-  S.jdSource = null;
-  document.getElementById('jdImportedState').hidden = true;
-  document.getElementById('jdTextarea').value = '';
-  S.jdText = '';
-  document.getElementById('jdCharCount').textContent = '0';
-  updateAnalyzeBtn();
-}
+  /* ==========================================================
+     ANALYSIS — orchestration
+     ------------------------------------------------------------
+     The whole pipeline is SIMULATED. The mock generators live
+     at the bottom of this section and are clearly isolated so
+     they can be replaced by a single fetch() call.
 
-function generateMockJobDescription() {
-  return `Senior Software Engineer - Machine Learning
+     TODO: FastAPI — replace `runSimulatedLogs` + `generateMockData`
+     with a real request, e.g.:
+
+       const form = new FormData();
+       if (state.cvFile) form.append('cv_file', state.cvFile);
+       if (state.jdFile) form.append('jd_file', state.jdFile);
+       form.append('cv_text', state.cvText);
+       form.append('jd_text', state.jdText);
+       form.append('mode', state.mode);
+
+       const res = await fetch('http://localhost:8000/analyze', {
+         method: 'POST', body: form
+       });
+       if (!res.ok) throw new Error('Analysis failed');
+       const data = await res.json();
+
+     `data` must match the shape expected by displayResults():
+       { score, skills: [{label, value}], matched: [], missing: [], mode }
+     ========================================================== */
+
+  function initAnalyzeButton() {
+    $('analyzeBtn').addEventListener('click', runAnalysis);
+    updateAnalyzeBtn();
+  }
+
+  function canAnalyze() {
+    const cvReady = !!state.cvFile || !!state.cvSource || state.cvText.trim().length > 0;
+    const jdReady = state.jdText.trim().length > 0 || !!state.jdFile;
+    return cvReady && jdReady && !state.analyzing;
+  }
+
+  function analysisBlockers() {
+    const cvReady = !!state.cvFile || !!state.cvSource || state.cvText.trim().length > 0;
+    const jdReady = state.jdText.trim().length > 0 || !!state.jdFile;
+    if (!cvReady) return 'Add a CV first — upload a file, paste a link, or paste CV text.';
+    if (!jdReady) return 'Add a job description — paste the text or upload a JD file.';
+    return null;
+  }
+
+  function updateAnalyzeBtn() {
+    $('analyzeBtn').disabled = !canAnalyze();
+  }
+
+  function runAnalysis() {
+    if (state.analyzing) return;
+    const problem = analysisBlockers();
+    if (problem) {
+      showError(problem);
+      return;
+    }
+    startAnalysisUi();
+
+    // TODO: FastAPI — replace with the fetch() request described above.
+    runSimulatedLogs(() => {
+      const data = generateMockData(state.mode);
+      finishAnalysis(data);
+    });
+  }
+
+  function startAnalysisUi() {
+    state.analyzing = true;
+    updateAnalyzeBtn();
+    hideError();
+    $('resultsSection').hidden = true;
+    $('resultsSkeleton').hidden = false;
+    $('analyzeBtn').querySelector('.btn-text').hidden = true;
+    $('analyzeBtn').querySelector('.btn-loader').hidden = false;
+    $('liveLogs').hidden = false;
+    $('liveLogs').classList.add('is-running');
+    setLogStatus('running');
+  }
+
+  function finishAnalysis(data) {
+    state.analyzing = false;
+    state.lastResult = data;
+    $('analyzeBtn').querySelector('.btn-text').hidden = false;
+    $('analyzeBtn').querySelector('.btn-loader').hidden = true;
+    $('resultsSkeleton').hidden = true;
+    displayResults(data);
+    saveHistory(data);
+    updateAnalyzeBtn();
+    showToast('Analysis complete', 'success');
+  }
+
+  /* ---- Simulated live logs ------------------------------- */
+
+  const LOG_PLAN = [
+    { text: 'Initializing analysis engine', icon: 'fa-microchip', type: 'info' },
+    { text: 'Parsing CV document', icon: 'fa-file-lines', type: 'info' },
+    { text: 'Extracting skills & experience', icon: 'fa-magnifying-glass', type: 'info' },
+    { text: 'Analyzing job description', icon: 'fa-briefcase', type: 'info' },
+    { text: 'Computing keyword matches', icon: 'fa-tags', type: 'info' },
+    { text: 'Generating mode-specific insights', icon: 'fa-wand-magic-sparkles', type: 'info' },
+    { text: 'Analysis complete', icon: 'fa-check', type: 'success' }
+  ];
+
+  function runSimulatedLogs(onDone) {
+    const body = $('logsBody');
+    body.innerHTML = '';
+    state.runTimers = [];
+    let step = 0;
+
+    const schedule = () => {
+      if (!state.analyzing) return;
+      if (step < LOG_PLAN.length) {
+        appendLogLine(LOG_PLAN[step++]);
+        state.runTimers.push(setTimeout(schedule, 320 + Math.random() * 380));
+      } else {
+        setLogStatus('done');
+        state.runTimers.push(setTimeout(onDone, 450));
+      }
+    };
+    state.runTimers.push(setTimeout(schedule, 150));
+  }
+
+  function appendLogLine(step) {
+    const body = $('logsBody');
+    const line = document.createElement('div');
+    line.className = `log-line log-${step.type}`;
+    line.innerHTML = `<span class="log-time">${formatClock()}</span><i class="fas ${step.icon}"></i><span class="log-text">${step.text}</span>`;
+    body.appendChild(line);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function setLogStatus(kind) {
+    const el = $('logsStatus');
+    el.classList.toggle('is-running', kind === 'running');
+    el.classList.toggle('is-done', kind === 'done');
+    el.innerHTML = kind === 'done'
+      ? '<i class="fas fa-check"></i> Complete'
+      : '<i class="fas fa-circle"></i> Running';
+  }
+
+  /* ---- Mock data generator ---------------------------------
+     TODO: FastAPI — replace this function with the response of
+     POST /analyze. Keep the return shape identical.           */
+
+  function generateMockData(mode) {
+    let score = 0;
+    let skills = [];
+    let matchedCount = 0;
+    let missingCount = 0;
+    const allMatched = [...MOCK_KEYWORDS.matched];
+    const allMissing = [...MOCK_KEYWORDS.missing];
+
+    switch (mode) {
+      case 'core':
+        score = 78;
+        skills = [
+          { label: 'Technical Skills', value: 82 },
+          { label: 'Domain Knowledge', value: 65 },
+          { label: 'Soft Skills', value: 71 }
+        ];
+        matchedCount = 7;
+        missingCount = 4;
+        break;
+      case 'techstack':
+        score = 72;
+        skills = [
+          { label: 'Frontend', value: 68 },
+          { label: 'Backend', value: 75 },
+          { label: 'DevOps', value: 55 },
+          { label: 'Data', value: 80 }
+        ];
+        matchedCount = 6;
+        missingCount = 4;
+        break;
+      case 'experience':
+        score = 65;
+        skills = [
+          { label: 'Years Experience', value: 72 },
+          { label: 'Role Relevance', value: 68 },
+          { label: 'Industry Fit', value: 58 }
+        ];
+        matchedCount = 5;
+        missingCount = 5;
+        break;
+      case 'achievements':
+        score = 70;
+        skills = [
+          { label: 'Quantifiable Impact', value: 74 },
+          { label: 'Action Verb Strength', value: 68 },
+          { label: 'Results Focus', value: 70 }
+        ];
+        matchedCount = 6;
+        missingCount = 4;
+        break;
+      case 'structure':
+        score = 85;
+        skills = [
+          { label: 'Completeness', value: 82 },
+          { label: 'Readability', value: 78 },
+          { label: 'Formatting', value: 90 }
+        ];
+        matchedCount = 8;
+        missingCount = 2;
+        break;
+      case 'interview':
+        score = 60;
+        skills = [
+          { label: 'Technical Depth', value: 65 },
+          { label: 'System Design', value: 55 },
+          { label: 'Problem Solving', value: 72 }
+        ];
+        matchedCount = 4;
+        missingCount = 6;
+        break;
+      case 'salary':
+        score = 74;
+        skills = [
+          { label: 'Stack Value', value: 76 },
+          { label: 'Experience Worth', value: 70 },
+          { label: 'Market Demand', value: 78 }
+        ];
+        matchedCount = 6;
+        missingCount = 3;
+        break;
+      default:
+        score = 70;
+        skills = [
+          { label: 'Technical Skills', value: 75 },
+          { label: 'Domain Knowledge', value: 65 },
+          { label: 'Soft Skills', value: 70 }
+        ];
+        matchedCount = 5;
+        missingCount = 5;
+    }
+
+    return {
+      score,
+      skills,
+      matched: shuffle(allMatched).slice(0, matchedCount),
+      missing: shuffle(allMissing).slice(0, missingCount),
+      mode
+    };
+  }
+
+  function generateMockJobDescription() {
+    return `Senior Software Engineer - Machine Learning
 
 About the role:
 We are looking for a Senior Software Engineer to join our ML Platform team. You will build scalable data pipelines, deploy machine learning models to production, and collaborate closely with data scientists and product teams.
@@ -352,788 +903,751 @@ Nice to have:
 - GraphQL, TypeScript or React
 - Terraform or Infrastructure as Code
 - Experience with agile development methodologies`;
-}
-
-function renderProfileHints() {
-  ['linkedin', 'github'].forEach(type => {
-    const hint = document.querySelector(`[data-profile-hint="${type}"]`);
-    if (!hint) return;
-    const linkEl = hint.querySelector('a');
-    if (S.profile[type]) {
-      hint.hidden = false;
-      linkEl.textContent = S.profile[type];
-      linkEl.href = S.profile[type];
-    } else {
-      hint.hidden = true;
-    }
-  });
-}
-
-function initProfile() {
-  document.getElementById('profileLinkedin').value = S.profile.linkedin || '';
-  document.getElementById('profileGithub').value = S.profile.github || '';
-  renderProfileStatus();
-  renderProfileHints();
-  document.getElementById('saveProfileBtn').addEventListener('click', () => {
-    const linkedin = normalizeUrl(document.getElementById('profileLinkedin').value.trim());
-    const github = normalizeUrl(document.getElementById('profileGithub').value.trim());
-    if (linkedin && !validateUrl(linkedin, 'linkedin')) {
-      showError('Please enter a valid LinkedIn URL');
-      return;
-    }
-    if (github && !validateUrl(github, 'github')) {
-      showError('Please enter a valid GitHub URL');
-      return;
-    }
-    S.profile = { linkedin, github };
-    localStorage.setItem('sm_profile', JSON.stringify(S.profile));
-    renderProfileStatus();
-    renderProfileHints();
-    showToast('Profile saved successfully', 'success');
-  });
-}
-
-function renderProfileStatus() {
-  ['linkedin', 'github'].forEach(type => {
-    const badge = document.getElementById(`${type}Status`);
-    const connected = !!S.profile[type];
-    badge.className = `status-badge ${connected ? 'connected' : 'not-connected'}`;
-    badge.textContent = connected ? 'Connected' : 'Not connected';
-  });
-}
-
-function initCharCounter() {
-  const ta = document.getElementById('jdTextarea');
-  ta.addEventListener('input', () => {
-    S.jdText = ta.value;
-    document.getElementById('jdCharCount').textContent = ta.value.length;
-    updateAnalyzeBtn();
-  });
-}
-
-function initModeSelector() {
-  const grid = document.getElementById('modeGrid');
-  grid.innerHTML = '';
-  MODES.forEach((m, i) => {
-    const card = document.createElement('div');
-    card.className = `mode-card ${m.id === S.mode ? 'active' : ''}`;
-    card.dataset.mode = m.id;
-    card.innerHTML = `<i class="fas ${m.icon}"></i><h4>${m.title}</h4><p>${m.desc}</p>`;
-    card.addEventListener('click', () => selectMode(m.id));
-    grid.appendChild(card);
-    if (i === 0) card.classList.add('active');
-  });
-}
-
-function initHomeFeatures() {
-  const grid = document.getElementById('homeFeatureGrid');
-  grid.innerHTML = '';
-  MODES.forEach(m => {
-    const card = document.createElement('div');
-    card.className = 'feature-card';
-    card.innerHTML = `<i class="fas ${m.icon}"></i><h4>${m.title}</h4><p>${m.desc}</p>`;
-    card.addEventListener('click', () => { selectMode(m.id); navigateTo('dashboard'); });
-    grid.appendChild(card);
-  });
-}
-
-function selectMode(id) {
-  S.mode = id;
-  document.querySelectorAll('.mode-card').forEach(c => {
-    c.classList.toggle('active', c.dataset.mode === id);
-  });
-  const mode = MODES.find(m => m.id === id);
-  if (mode) document.getElementById('analyzeBtnText').textContent = `Run ${mode.title} Analysis`;
-  updateAnalyzeBtn();
-}
-
-function initAnalyzeButton() {
-  document.getElementById('analyzeBtn').addEventListener('click', runAnalysis);
-  updateAnalyzeBtn();
-}
-
-function updateAnalyzeBtn() {
-  const btn = document.getElementById('analyzeBtn');
-  const cvReady = !!S.file || !!S.cvSource;
-  const ready = cvReady && S.jdText.trim().length > 0 && !S.analyzing;
-  btn.disabled = !ready;
-}
-
-function runAnalysis() {
-  if (S.analyzing || (!S.file && !S.cvSource) || !S.jdText.trim()) return;
-  S.analyzing = true;
-  updateAnalyzeBtn();
-  document.getElementById('errorToast').hidden = true;
-  document.getElementById('resultsSection').hidden = true;
-  document.getElementById('analyzeBtn').querySelector('.btn-text').hidden = true;
-  document.getElementById('analyzeBtn').querySelector('.btn-loader').hidden = false;
-  const logs = document.getElementById('liveLogs');
-  logs.hidden = false;
-  const body = document.getElementById('logsBody');
-  body.innerHTML = '';
-  const logSteps = [
-    { text: 'Initializing analysis engine...', type: 'info', delay: 100 },
-    { text: 'Parsing CV document...', type: 'info', delay: 400 },
-    { text: 'Extracting skills & experience...', type: 'info', delay: 700 },
-    { text: 'Analyzing job description...', type: 'info', delay: 1000 },
-    { text: 'Computing keyword matches...', type: 'info', delay: 1300 },
-    { text: 'Generating mode-specific insights...', type: 'info', delay: 1600 },
-    { text: 'Analysis complete', type: 'success', delay: 1900 }
-  ];
-  logSteps.forEach(step => {
-    setTimeout(() => {
-      const line = document.createElement('div');
-      line.className = `log-line log-${step.type}`;
-      line.innerHTML = `<i class="fas fa-${step.type === 'success' ? 'check' : 'circle'}"></i> ${step.text}`;
-      body.appendChild(line);
-      body.scrollTop = body.scrollHeight;
-    }, step.delay);
-  });
-  setTimeout(() => {
-    document.getElementById('logsStatus').textContent = 'Complete';
-    const data = generateMockData(S.mode);
-    displayResults(data);
-    saveHistory(data.score);
-    S.analyzing = false;
-    updateAnalyzeBtn();
-    document.getElementById('analyzeBtn').querySelector('.btn-text').hidden = false;
-    document.getElementById('analyzeBtn').querySelector('.btn-loader').hidden = true;
-  }, 2200);
-}
-
-function generateMockData(mode) {
-  let score = 0;
-  let skills = [];
-  let matchedCount = 0;
-  let missingCount = 0;
-  const allMatched = [...MOCK_KEYWORDS.matched];
-  const allMissing = [...MOCK_KEYWORDS.missing];
-
-  switch (mode) {
-    case 'core':
-      score = 78;
-      skills = [
-        { label: 'Technical Skills', value: 82 },
-        { label: 'Domain Knowledge', value: 65 },
-        { label: 'Soft Skills', value: 71 }
-      ];
-      matchedCount = 7;
-      missingCount = 4;
-      break;
-    case 'techstack':
-      score = 72;
-      skills = [
-        { label: 'Frontend', value: 68 },
-        { label: 'Backend', value: 75 },
-        { label: 'DevOps', value: 55 },
-        { label: 'Data', value: 80 }
-      ];
-      matchedCount = 6;
-      missingCount = 4;
-      break;
-    case 'experience':
-      score = 65;
-      skills = [
-        { label: 'Years Experience', value: 72 },
-        { label: 'Role Relevance', value: 68 },
-        { label: 'Industry Fit', value: 58 }
-      ];
-      matchedCount = 5;
-      missingCount = 5;
-      break;
-    case 'achievements':
-      score = 70;
-      skills = [
-        { label: 'Quantifiable Impact', value: 74 },
-        { label: 'Action Verb Strength', value: 68 },
-        { label: 'Results Focus', value: 70 }
-      ];
-      matchedCount = 6;
-      missingCount = 4;
-      break;
-    case 'structure':
-      score = 85;
-      skills = [
-        { label: 'Completeness', value: 82 },
-        { label: 'Readability', value: 78 },
-        { label: 'Formatting', value: 90 }
-      ];
-      matchedCount = 8;
-      missingCount = 2;
-      break;
-    case 'interview':
-      score = 60;
-      skills = [
-        { label: 'Technical Depth', value: 65 },
-        { label: 'System Design', value: 55 },
-        { label: 'Problem Solving', value: 72 }
-      ];
-      matchedCount = 4;
-      missingCount = 6;
-      break;
-    case 'salary':
-      score = 74;
-      skills = [
-        { label: 'Stack Value', value: 76 },
-        { label: 'Experience Worth', value: 70 },
-        { label: 'Market Demand', value: 78 }
-      ];
-      matchedCount = 6;
-      missingCount = 3;
-      break;
-    default:
-      score = 70;
-      skills = [
-        { label: 'Technical Skills', value: 75 },
-        { label: 'Domain Knowledge', value: 65 },
-        { label: 'Soft Skills', value: 70 }
-      ];
-      matchedCount = 5;
-      missingCount = 5;
   }
 
-  return {
-    score,
-    skills,
-    matched: shuffle(allMatched).slice(0, matchedCount),
-    missing: shuffle(allMissing).slice(0, missingCount),
-    mode
-  };
-}
+  /* ==========================================================
+     RESULTS RENDERING
+     ========================================================== */
 
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+  function displayResults(data) {
+    animateScore($('scoreCircle'), $('scoreNumber'), data.score);
+    $('statMatched').textContent = data.matched.length;
+    $('statMissing').textContent = data.missing.length;
+    $('statKeywords').textContent = data.matched.length + data.missing.length;
+    renderSkillBars($('skillBars'), data.skills);
+    renderTags('matchedTags', data.matched, 'matched');
+    renderTags('missingTags', data.missing, 'missing');
+    $('matchedCount').textContent = data.matched.length;
+    $('missingCount').textContent = data.missing.length;
+    renderModeCards(data.mode);
+    $('resultsSection').hidden = false;
+    $('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
-  return a;
-}
 
-function displayResults(data) {
-  animateScore(data.score);
-  document.getElementById('scoreDetails').querySelector('.stat-matched').textContent = data.matched.length;
-  document.getElementById('scoreDetails').querySelector('.stat-missing').textContent = data.missing.length;
-  document.getElementById('scoreDetails').querySelector('.stat-keywords').textContent = data.matched.length + data.missing.length;
-  renderSkillBars(data.skills);
-  renderTags('matchedTags', data.matched, 'matched');
-  renderTags('missingTags', data.missing, 'missing');
-  document.getElementById('matchedCount').textContent = data.matched.length;
-  document.getElementById('missingCount').textContent = data.missing.length;
-  renderModeCards(data.mode);
-  document.getElementById('resultsSection').hidden = false;
-  document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
+  function animateScore(circle, numberEl, target) {
+    const clamped = clampScore(target);
+    const duration = 1200;
+    const start = performance.now();
 
-function animateScore(target) {
-  const circle = document.getElementById('scoreCircle');
-  const valueEl = document.getElementById('scoreValue');
-  const clamped = Math.max(0, Math.min(100, Math.round(target)));
-  const dur = 1200;
-  const start = performance.now();
-
-  function update(now) {
-    const p = Math.min((now - start) / dur, 1);
-    const ease = 1 - Math.pow(1 - p, 3);
-    const current = Math.round(clamped * ease);
-    valueEl.innerHTML = `${current}<span class="score-pct">%</span>`;
-    const deg = (current / 100) * 360;
-    circle.style.background = `conic-gradient(var(--primary) ${deg}deg, var(--bg-tertiary) ${deg}deg)`;
-    if (p < 1) requestAnimationFrame(update);
-    else {
-      valueEl.innerHTML = `${clamped}<span class="score-pct">%</span>`;
-      circle.style.background = `conic-gradient(var(--primary) ${(clamped / 100) * 360}deg, var(--bg-tertiary) ${(clamped / 100) * 360}deg)`;
-    }
+    const frame = (now) => {
+      const p = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      const current = Math.round(clamped * ease);
+      numberEl.textContent = current;
+      const deg = (current / 100) * 360;
+      circle.style.background = `conic-gradient(var(--primary) ${deg}deg, var(--bg-tertiary) ${deg}deg)`;
+      if (p < 1) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
   }
-  requestAnimationFrame(update);
-}
 
-function renderSkillBars(skills) {
-  const container = document.getElementById('skillBars');
-  container.innerHTML = '';
-  skills.forEach((s, i) => {
-    const item = document.createElement('div');
-    item.className = 'skill-bar-item';
-    const level = s.value >= 75 ? 'high' : s.value >= 55 ? 'med' : 'low';
-    item.innerHTML = `
-      <div class="skill-bar-header">
-        <span class="skill-bar-label">${s.label}</span>
-        <span class="skill-bar-value">${s.value}%</span>
-      </div>
-      <div class="skill-bar-track">
-        <div class="skill-bar-fill ${level}" style="width:0%"></div>
-      </div>
-    `;
-    container.appendChild(item);
-    setTimeout(() => {
-      item.querySelector('.skill-bar-fill').style.width = `${s.value}%`;
-    }, 100 + i * 150);
-  });
-}
-
-function renderTags(containerId, items, type) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = '';
-  if (!items.length) {
-    container.classList.add('empty');
-    return;
+  function skillsHtml(skills) {
+    return skills.map((s) => {
+      const level = s.value >= 75 ? 'high' : s.value >= 55 ? 'med' : 'low';
+      return `
+        <div class="skill-bar-item">
+          <div class="skill-bar-header">
+            <span class="skill-bar-label">${escapeHtml(s.label)}</span>
+            <span class="skill-bar-value">${s.value}%</span>
+          </div>
+          <div class="skill-bar-track">
+            <div class="skill-bar-fill ${level}" data-w="${s.value}" style="width:0%"></div>
+          </div>
+        </div>`;
+    }).join('');
   }
-  container.classList.remove('empty');
-  items.forEach((kw, i) => {
-    const tag = document.createElement('span');
-    tag.className = `tag ${type}`;
-    tag.textContent = kw;
-    tag.style.animationDelay = `${i * 40}ms`;
-    container.appendChild(tag);
-  });
-}
 
-function renderModeCards(mode) {
-  const container = document.getElementById('modeSpecificCards');
-  container.innerHTML = '';
-  if (mode === 'core') {
-    container.innerHTML = `
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-code"></i> Tech Stack Summary</h4>
-        <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.75rem;">Python, JavaScript, React, Node.js, PostgreSQL</p>
-        <div class="badge-group">
-          <span class="badge primary"><i class="fas fa-check"></i> Python</span>
-          <span class="badge primary"><i class="fas fa-check"></i> React</span>
-          <span class="badge primary"><i class="fas fa-check"></i> SQL</span>
-          <span class="badge primary"><i class="fas fa-check"></i> AWS</span>
-          <span class="badge"><i class="fas fa-plus"></i> Docker</span>
-          <span class="badge"><i class="fas fa-plus"></i> Kubernetes</span>
-        </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-lightbulb"></i> Key Insights</h4>
-        <ul style="list-style:none;font-size:0.85rem;display:flex;flex-direction:column;gap:0.5rem;">
-          <li style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-check-circle" style="color:var(--success);"></i> Strong Python & ML background</li>
-          <li style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-check-circle" style="color:var(--success);"></i> 5+ relevant projects identified</li>
-          <li style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-circle-exclamation" style="color:var(--warning);"></i> Missing cloud orchestration skills</li>
-        </ul>
-      </div>`;
-  } else if (mode === 'techstack') {
-    container.innerHTML = `
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-code"></i> Technologies: CV</h4>
-        <div class="badge-group">
-          <span class="badge primary">Python</span> <span class="badge primary">JavaScript</span> <span class="badge primary">React</span>
-          <span class="badge primary">Node.js</span> <span class="badge primary">PostgreSQL</span> <span class="badge primary">AWS</span>
-        </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-briefcase"></i> Technologies: Job</h4>
-        <div class="badge-group">
-          <span class="badge primary">Python</span> <span class="badge primary">JavaScript</span> <span class="badge primary">React</span>
-          <span class="badge">Docker</span> <span class="badge">Kubernetes</span> <span class="badge">AWS</span>
-          <span class="badge">MongoDB</span> <span class="badge">TypeScript</span>
-        </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-industry"></i> Industry Terminology</h4>
-        <div class="badge-group">
-          <span class="badge primary"><i class="fas fa-check"></i> Microservices</span>
-          <span class="badge primary"><i class="fas fa-check"></i> RESTful API</span>
-          <span class="badge primary"><i class="fas fa-check"></i> Cloud Native</span>
-          <span class="badge primary"><i class="fas fa-check"></i> CI/CD</span>
-          <span class="badge"><i class="fas fa-xmark"></i> Serverless</span>
-          <span class="badge"><i class="fas fa-xmark"></i> Event-Driven</span>
-        </div>
-      </div>`;
-  } else if (mode === 'experience') {
-    container.innerHTML = `
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-clock"></i> Experience Comparison</h4>
-        <div class="experience-stats">
-          <div class="exp-stat"><div class="exp-value">5.2</div><div class="exp-label">CV Years</div></div>
-          <div class="exp-stat"><div class="exp-value">4.0</div><div class="exp-label">Required Years</div></div>
-          <div class="exp-stat"><div class="exp-value">72%</div><div class="exp-label">Relevance</div></div>
-          <div class="exp-stat"><div class="exp-value">+1.2</div><div class="exp-label">Years Advantage</div></div>
-        </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-triangle-exclamation"></i> Gap Alert</h4>
-        <div class="gap-alert"><i class="fas fa-clock"></i> 8-month gap detected between Jun 2023 & Feb 2024</div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-briefcase"></i> Project Relevance</h4>
-        <div style="display:flex;flex-direction:column;gap:0.6rem;">
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;padding:0.5rem 0.75rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border-light);">
-            <span>ML Pipeline Automation</span> <span style="font-weight:600;color:var(--success);">92%</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;padding:0.5rem 0.75rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border-light);">
-            <span>Data Dashboard</span> <span style="font-weight:600;color:var(--primary);">78%</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;padding:0.5rem 0.75rem;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border-light);">
-            <span>E-commerce API</span> <span style="font-weight:600;color:var(--warning);">55%</span>
-          </div>
-        </div>
-      </div>`;
-  } else if (mode === 'achievements') {
-    container.innerHTML = `
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-trophy"></i> Quantifiable Achievements</h4>
-        <div class="achievement-list">
-          <div class="achievement-item"><i class="fas fa-check-circle"></i> <span>Increased model accuracy by <strong>34%</strong> through feature engineering</span></div>
-          <div class="achievement-item"><i class="fas fa-check-circle"></i> <span>Reduced deployment time by <strong>60%</strong> with CI/CD pipeline</span></div>
-          <div class="achievement-item"><i class="fas fa-check-circle"></i> <span>Managed a team of <strong>5</strong> engineers delivering 3 major releases</span></div>
-          <div class="achievement-item"><i class="fas fa-check-circle"></i> <span>Improved query performance by <strong>45%</strong> via database optimization</span></div>
-          <div class="achievement-item"><i class="fas fa-check-circle"></i> <span>Generated <strong>$200K</strong> revenue through ML-powered recommendations</span></div>
-        </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-pen"></i> Action Verb Strength</h4>
-        <div style="display:flex;flex-direction:column;gap:0.75rem;">
-          <div>
-            <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.25rem;">
-              <span style="color:var(--text-secondary);">Achieved</span> <span style="font-weight:600;">Strong</span>
-            </div>
-            <div class="verb-strength"><span class="bar filled"></span><span class="bar filled"></span><span class="bar filled"></span><span class="bar filled"></span><span class="bar"></span></div>
-          </div>
-          <div>
-            <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.25rem;">
-              <span style="color:var(--text-secondary);">Led</span> <span style="font-weight:600;">Strong</span>
-            </div>
-            <div class="verb-strength"><span class="bar filled"></span><span class="bar filled"></span><span class="bar filled"></span><span class="bar filled"></span><span class="bar"></span></div>
-          </div>
-          <div>
-            <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.25rem;">
-              <span style="color:var(--text-secondary);">Helped</span> <span style="font-weight:600;">Weak</span>
-            </div>
-            <div class="verb-strength"><span class="bar filled"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span></div>
-          </div>
-        </div>
-      </div>`;
-  } else if (mode === 'structure') {
-    container.innerHTML = `
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-layer-group"></i> Structure Overview</h4>
-        <div class="structure-grid">
-          <div class="structure-item"><div class="s-value" style="color:var(--success);">82%</div><div class="s-label">Completeness</div></div>
-          <div class="structure-item"><div class="s-value" style="color:var(--primary);">68</div><div class="s-label">Readability (Grade 9)</div></div>
-          <div class="structure-item"><div class="s-value" style="color:var(--success);">90%</div><div class="s-label">Formatting</div></div>
-          <div class="structure-item"><div class="s-value" style="color:var(--warning);">2</div><div class="s-label">Missing Sections</div></div>
-        </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-list"></i> Section Check</h4>
-        <div style="display:flex;flex-direction:column;gap:0.35rem;font-size:0.85rem;">
-          <div style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-check" style="color:var(--success);"></i> Contact Info</div>
-          <div style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-check" style="color:var(--success);"></i> Professional Summary</div>
-          <div style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-check" style="color:var(--success);"></i> Work Experience</div>
-          <div style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-check" style="color:var(--success);"></i> Education</div>
-          <div style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-check" style="color:var(--success);"></i> Skills</div>
-          <div style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-xmark" style="color:var(--danger);"></i> Certifications</div>
-          <div style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-xmark" style="color:var(--danger);"></i> Projects Section</div>
-        </div>
-      </div>`;
-  } else if (mode === 'interview') {
-    container.innerHTML = `
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-question"></i> Technical Interview Questions</h4>
-        <div class="interview-list">
-          <div class="interview-item"><div class="interview-num">1</div><div class="interview-text">Explain the difference between supervised and unsupervised learning. Provide examples of algorithms for each.</div></div>
-          <div class="interview-item"><div class="interview-num">2</div><div class="interview-text">How would you design a system to handle real-time data processing for millions of events per second?</div></div>
-          <div class="interview-item"><div class="interview-num">3</div><div class="interview-text">Describe a time you optimized a slow database query. What tools and techniques did you use?</div></div>
-          <div class="interview-item"><div class="interview-num">4</div><div class="interview-text">Explain RESTful API design principles. How do you handle versioning and error responses?</div></div>
-          <div class="interview-item"><div class="interview-num">5</div><div class="interview-text">What is the CAP theorem? How does it apply to choosing a database for a distributed system?</div></div>
-        </div>
-      </div>`;
-  } else if (mode === 'salary') {
-    container.innerHTML = `
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-dollar-sign"></i> Estimated Salary Range</h4>
-        <div class="salary-range">
-          <div class="salary-amount">$135K - $175K</div>
-          <div class="salary-note">Based on your stack, experience, and location</div>
-        </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-sliders"></i> Salary Factors</h4>
-        <div class="salary-factors">
-          <div class="factor-row"><span class="factor-label">Tech Stack Premium</span> <span class="factor-value" style="color:var(--success);">+$15K</span></div>
-          <div class="factor-row"><span class="factor-label">Years Experience</span> <span class="factor-value" style="color:var(--success);">+$10K</span></div>
-          <div class="factor-row"><span class="factor-label">Location (Remote)</span> <span class="factor-value" style="color:var(--text);">-$5K</span></div>
-          <div class="factor-row"><span class="factor-label">Missing Cloud Skills</span> <span class="factor-value" style="color:var(--danger);">-$8K</span></div>
-          <div class="factor-row"><span class="factor-label">Industry (Tech)</span> <span class="factor-value" style="color:var(--success);">+$12K</span></div>
-        </div>
-      </div>`;
-  }
-}
-
-function saveHistory(score) {
-  const entry = {
-    id: Date.now(),
-    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-    cvName: S.file ? S.file.name : (S.cvSource ? S.cvSource.label : 'Unknown'),
-    mode: MODES.find(m => m.id === S.mode)?.title || 'Unknown',
-    score
-  };
-  S.history.unshift(entry);
-  localStorage.setItem('sm_history', JSON.stringify(S.history));
-}
-
-function initHistory() {
-  document.getElementById('clearHistoryBtn').addEventListener('click', () => {
-    if (S.history.length === 0) return;
-    if (confirm('Clear all analysis history?')) {
-      S.history = [];
-      localStorage.setItem('sm_history', JSON.stringify(S.history));
-      renderHistory();
-      showToast('History cleared', 'success');
-    }
-  });
-}
-
-function renderHistory() {
-  const empty = document.getElementById('historyEmpty');
-  const wrap = document.getElementById('historyTableWrap');
-  const body = document.getElementById('historyBody');
-  if (S.history.length === 0) {
-    empty.hidden = false;
-    wrap.hidden = true;
-    return;
-  }
-  empty.hidden = true;
-  wrap.hidden = false;
-  body.innerHTML = '';
-  S.history.forEach(h => {
-    const tr = document.createElement('tr');
-    const scoreClass = h.score >= 75 ? 'color:var(--success)' : h.score >= 55 ? 'color:var(--warning)' : 'color:var(--danger)';
-    tr.innerHTML = `
-      <td style="white-space:nowrap;">${h.date}</td>
-      <td>${h.cvName}</td>
-      <td>${h.mode}</td>
-      <td><span class="history-score" style="${scoreClass}">${h.score}%</span></td>
-      <td><button class="btn btn-secondary btn-sm view-history-btn" data-id="${h.id}"><i class="fas fa-eye"></i> View</button></td>`;
-    body.appendChild(tr);
-  });
-  body.querySelectorAll('.view-history-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const entry = S.history.find(h => h.id === Number(btn.dataset.id));
-      if (entry) showToast(`Viewing: ${entry.cvName} (${entry.mode})`, 'success');
+  function animateBars(container) {
+    container.querySelectorAll('.skill-bar-fill[data-w]').forEach((fill, i) => {
+      setTimeout(() => { fill.style.width = `${fill.dataset.w}%`; }, 100 + i * 150);
     });
-  });
-}
+  }
 
-function initNewAnalysis() {
-  document.getElementById('newAnalysisBtn').addEventListener('click', resetAnalysis);
-}
+  function renderSkillBars(container, skills) {
+    container.innerHTML = skillsHtml(skills);
+    animateBars(container);
+  }
 
-function resetAnalysis() {
-  clearFile();
-  S.cvSource = null;
-  S.jdSource = null;
-  document.querySelectorAll('[data-imported-state]').forEach(el => { el.hidden = true; });
-  document.querySelectorAll('[data-url-input]').forEach(el => { el.value = ''; });
-  document.getElementById('jdTextarea').value = '';
-  S.jdText = '';
-  document.getElementById('jdCharCount').textContent = '0';
-  document.getElementById('resultsSection').hidden = true;
-  document.getElementById('liveLogs').hidden = true;
-  document.getElementById('errorToast').hidden = true;
-  document.getElementById('logsStatus').textContent = 'Running';
-  updateAnalyzeBtn();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+  function renderTags(containerId, items, type) {
+    const container = $(containerId);
+    container.innerHTML = '';
+    if (!items.length) {
+      container.classList.add('empty');
+      return;
+    }
+    container.classList.remove('empty');
+    const frag = document.createDocumentFragment();
+    items.forEach((kw, i) => {
+      const tag = document.createElement('span');
+      tag.className = `tag ${type}`;
+      tag.textContent = kw;
+      tag.style.animationDelay = `${i * 40}ms`;
+      frag.appendChild(tag);
+    });
+    container.appendChild(frag);
+  }
 
-function initSideActions() {
-  document.getElementById('exportPdfBtn').addEventListener('click', () => showToast('PDF report exported', 'success'));
-  document.getElementById('shareBtn').addEventListener('click', () => showToast('Share link copied to clipboard', 'success'));
-  document.getElementById('dismissError').addEventListener('click', () => document.getElementById('errorToast').hidden = true);
-  document.getElementById('backToDashboard').addEventListener('click', () => navigateTo('dashboard'));
-  initReportTabs();
-}
+  function keywordsHtml(data) {
+    return `
+      <div class="keywords-grid">
+        <div class="keyword-group">
+          <h5><span class="kw-dot matched"></span> Matched <span class="kw-count">${data.matched.length}</span></h5>
+          <div class="tags-container">${data.matched.map((k) => `<span class="tag matched">${escapeHtml(k)}</span>`).join('')}</div>
+        </div>
+        <div class="keyword-group">
+          <h5><span class="kw-dot missing"></span> Missing <span class="kw-count">${data.missing.length}</span></h5>
+          <div class="tags-container">${data.missing.map((k) => `<span class="tag missing">${escapeHtml(k)}</span>`).join('')}</div>
+        </div>
+      </div>`;
+  }
 
-function initReportTabs() {
-  document.querySelectorAll('.report-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.report-tab').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      document.querySelectorAll('.report-panel').forEach(p => p.classList.remove('active'));
-      const panel = document.getElementById(`report${tab.dataset.reportTab.charAt(0).toUpperCase() + tab.dataset.reportTab.slice(1)}`);
-      if (panel) {
-        panel.classList.add('active');
-        populateReportPanel(tab.dataset.reportTab);
+  /* ---- Mode-specific result sections -----------------------
+     Single source of truth shared by the dashboard results and
+     the Detailed Report page.                                */
+
+  const MODE_SECTIONS = {
+    core: [
+      {
+        title: 'Tech Stack Summary',
+        icon: 'fa-code',
+        type: 'badges',
+        intro: 'Python, JavaScript, React, Node.js, PostgreSQL',
+        items: [
+          { text: 'Python', state: 'present' }, { text: 'React', state: 'present' },
+          { text: 'SQL', state: 'present' }, { text: 'AWS', state: 'present' },
+          { text: 'Docker', state: 'missing' }, { text: 'Kubernetes', state: 'missing' }
+        ]
+      },
+      {
+        title: 'Key Insights',
+        icon: 'fa-lightbulb',
+        type: 'insights',
+        items: [
+          { icon: 'fa-check-circle', tone: 'success', text: 'Strong Python & ML background' },
+          { icon: 'fa-check-circle', tone: 'success', text: '5+ relevant projects identified' },
+          { icon: 'fa-circle-exclamation', tone: 'warning', text: 'Missing cloud orchestration skills' }
+        ]
       }
-    });
-  });
-  document.querySelector('.report-tab.active')?.click();
-}
+    ],
+    techstack: [
+      {
+        title: 'Tech Stack Comparison',
+        icon: 'fa-code',
+        type: 'tech-cols',
+        cv: ['Python', 'JavaScript', 'React', 'Node.js', 'PostgreSQL', 'AWS'],
+        job: ['Python', 'JavaScript', 'React', 'Docker', 'Kubernetes', 'AWS', 'MongoDB', 'TypeScript']
+      },
+      {
+        title: 'Industry Terminology',
+        icon: 'fa-industry',
+        type: 'badges',
+        items: [
+          { text: 'Microservices', state: 'present' }, { text: 'RESTful API', state: 'present' },
+          { text: 'Cloud Native', state: 'present' }, { text: 'CI/CD', state: 'present' },
+          { text: 'Serverless', state: 'missing' }, { text: 'Event-Driven', state: 'missing' }
+        ]
+      }
+    ],
+    experience: [
+      {
+        title: 'Experience Comparison',
+        icon: 'fa-clock',
+        type: 'exp-stats',
+        stats: [
+          { value: '5.2', label: 'CV Years' },
+          { value: '4.0', label: 'Required Years' },
+          { value: '72%', label: 'Relevance' },
+          { value: '+1.2', label: 'Years Advantage' }
+        ]
+      },
+      {
+        title: 'Gap Alert',
+        icon: 'fa-triangle-exclamation',
+        type: 'gap-alert',
+        text: '8-month gap detected between Jun 2023 & Feb 2024'
+      },
+      {
+        title: 'Project Relevance',
+        icon: 'fa-briefcase',
+        type: 'projects',
+        items: [
+          { text: 'ML Pipeline Automation', value: '92%', tone: 'success' },
+          { text: 'Data Dashboard', value: '78%', tone: 'primary' },
+          { text: 'E-commerce API', value: '55%', tone: 'warning' }
+        ]
+      },
+      {
+        title: 'Career Timeline',
+        icon: 'fa-timeline',
+        type: 'timeline',
+        alert: '8-month gap detected between Jun 2023 & Feb 2024',
+        items: [
+          { title: 'Senior Engineer, TechCorp', period: '2022 - Present' },
+          { title: 'ML Engineer, DataFlow', period: '2020 - 2023' },
+          { title: 'Junior Dev, StartUp', period: '2018 - 2020' }
+        ]
+      }
+    ],
+    achievements: [
+      {
+        title: 'Quantifiable Achievements',
+        icon: 'fa-trophy',
+        type: 'achievements',
+        items: [
+          'Increased model accuracy by <strong>34%</strong> through feature engineering',
+          'Reduced deployment time by <strong>60%</strong> with CI/CD pipeline',
+          'Managed a team of <strong>5</strong> engineers delivering 3 major releases',
+          'Improved query performance by <strong>45%</strong> via database optimization',
+          'Generated <strong>$200K</strong> revenue through ML-powered recommendations'
+        ]
+      },
+      {
+        title: 'Action Verb Strength',
+        icon: 'fa-pen',
+        type: 'verbs',
+        items: [
+          { verb: 'Achieved', rating: 'Strong', strength: 4 },
+          { verb: 'Led', rating: 'Strong', strength: 4 },
+          { verb: 'Helped', rating: 'Weak', strength: 1 }
+        ]
+      }
+    ],
+    structure: [
+      {
+        title: 'Structure Overview',
+        icon: 'fa-layer-group',
+        type: 'stat-grid',
+        stats: [
+          { value: '82%', label: 'Completeness', tone: 'success' },
+          { value: '68', label: 'Readability (Grade 9)', tone: 'primary' },
+          { value: '90%', label: 'Formatting', tone: 'success' },
+          { value: '2', label: 'Missing Sections', tone: 'warning' }
+        ]
+      },
+      {
+        title: 'Section Check',
+        icon: 'fa-list',
+        type: 'checklist',
+        present: ['Contact Info', 'Professional Summary', 'Work Experience', 'Education', 'Skills'],
+        missing: ['Certifications', 'Projects Section']
+      }
+    ],
+    interview: [
+      {
+        title: 'Technical Interview Questions',
+        icon: 'fa-question',
+        type: 'interview',
+        questions: [
+          'Explain the difference between supervised and unsupervised learning. Provide examples of algorithms for each.',
+          'How would you design a system to handle real-time data processing for millions of events per second?',
+          'Describe a time you optimized a slow database query. What tools and techniques did you use?',
+          'Explain RESTful API design principles. How do you handle versioning and error responses?',
+          'What is the CAP theorem? How does it apply to choosing a database for a distributed system?'
+        ]
+      }
+    ],
+    salary: [
+      {
+        title: 'Estimated Salary Range',
+        icon: 'fa-dollar-sign',
+        type: 'salary',
+        amount: '$135K - $175K',
+        note: 'Based on your stack, experience, and location'
+      },
+      {
+        title: 'Salary Factors',
+        icon: 'fa-sliders',
+        type: 'factors',
+        items: [
+          { label: 'Tech Stack Premium', value: '+$15K', tone: 'success' },
+          { label: 'Years Experience', value: '+$10K', tone: 'success' },
+          { label: 'Location (Remote)', value: '-$5K', tone: 'neutral' },
+          { label: 'Missing Cloud Skills', value: '-$8K', tone: 'danger' },
+          { label: 'Industry (Tech)', value: '+$12K', tone: 'success' }
+        ]
+      }
+    ]
+  };
 
-function populateReportPanel(tabId) {
-  const panel = document.getElementById(`report${tabId.charAt(0).toUpperCase() + tabId.slice(1)}`);
-  if (!panel || panel.dataset.populated) return;
-  panel.dataset.populated = 'true';
-  if (tabId === 'overview') {
-    panel.innerHTML = `
-      <div class="result-card" style="margin-bottom:1.25rem;">
-        <h4 class="result-card-title"><i class="fas fa-chart-bar"></i> Overall Match</h4>
-        <div style="display:flex;align-items:center;gap:2rem;flex-wrap:wrap;">
-          <div class="score-circle" style="width:120px;height:120px;background:conic-gradient(var(--primary) 281deg, var(--bg-tertiary) 281deg);flex-shrink:0;">
-            <span style="position:relative;z-index:1;font-size:2rem;font-weight:700;">78<span style="font-size:0.85rem;color:var(--text-muted);">%</span></span>
-            <span style="position:relative;z-index:1;font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;">Match</span>
-          </div>
-          <div style="flex:1;">
-            <div style="display:flex;flex-direction:column;gap:0.5rem;">
-              <div style="display:flex;justify-content:space-between;font-size:0.85rem;"><span>Technical Skills</span><span style="font-weight:600;">82%</span></div>
-              <div class="skill-bar-track"><div class="skill-bar-fill high" style="width:82%"></div></div>
-              <div style="display:flex;justify-content:space-between;font-size:0.85rem;"><span>Domain Knowledge</span><span style="font-weight:600;">65%</span></div>
-              <div class="skill-bar-track"><div class="skill-bar-fill med" style="width:65%"></div></div>
-              <div style="display:flex;justify-content:space-between;font-size:0.85rem;"><span>Soft Skills</span><span style="font-weight:600;">71%</span></div>
-              <div class="skill-bar-track"><div class="skill-bar-fill med" style="width:71%"></div></div>
+  function renderModeCards(mode) {
+    $('modeSpecificCards').innerHTML = (MODE_SECTIONS[mode] || []).map(renderSection).join('');
+  }
+
+  function renderSection(s) {
+    switch (s.type) {
+      case 'tech-cols':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <div class="tech-cols">
+              <div>
+                <h5 class="col-label">Your CV</h5>
+                <div class="badge-group">${s.cv.map((t) => `<span class="badge primary">${escapeHtml(t)}</span>`).join('')}</div>
+              </div>
+              <div>
+                <h5 class="col-label">Job Requires</h5>
+                <div class="badge-group">${s.job.map((t) => `<span class="badge">${escapeHtml(t)}</span>`).join('')}</div>
+              </div>
+            </div>
+          </div>`;
+      case 'badges':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            ${s.intro ? `<p class="card-intro">${s.intro}</p>` : ''}
+            <div class="badge-group">
+              ${s.items.map((i) => `
+                <span class="badge ${i.state === 'present' ? 'primary' : ''}">
+                  <i class="fas ${i.state === 'present' ? 'fa-check' : 'fa-plus'}"></i> ${escapeHtml(i.text)}
+                </span>`).join('')}
+            </div>
+          </div>`;
+      case 'insights':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <ul class="insight-list">
+              ${s.items.map((i) => `<li class="insight-item"><i class="fas ${i.icon} tone-${i.tone}"></i> <span>${i.text}</span></li>`).join('')}
+            </ul>
+          </div>`;
+      case 'exp-stats':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <div class="experience-stats">
+              ${s.stats.map((x) => `<div class="exp-stat"><div class="exp-value">${x.value}</div><div class="exp-label">${x.label}</div></div>`).join('')}
+            </div>
+          </div>`;
+      case 'gap-alert':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <div class="gap-alert"><i class="fas fa-clock"></i> ${s.text}</div>
+          </div>`;
+      case 'projects':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <div class="project-list">
+              ${s.items.map((i) => `<div class="project-row"><span>${escapeHtml(i.text)}</span><span class="value tone-${i.tone}">${i.value}</span></div>`).join('')}
+            </div>
+          </div>`;
+      case 'timeline':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            ${s.alert ? `<div class="gap-alert timeline-alert"><i class="fas fa-clock"></i> ${s.alert}</div>` : ''}
+            <div class="timeline-list">
+              ${s.items.map((i) => `<div class="timeline-row"><span>${escapeHtml(i.title)}</span><span class="period">${i.period}</span></div>`).join('')}
+            </div>
+          </div>`;
+      case 'achievements':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <ul class="achievement-list">
+              ${s.items.map((i) => `<li class="achievement-item"><i class="fas fa-check-circle"></i> <span>${i}</span></li>`).join('')}
+            </ul>
+          </div>`;
+      case 'verbs':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <div class="verb-list">
+              ${s.items.map((v) => `
+                <div class="verb-row">
+                  <div class="verb-header">
+                    <span>${escapeHtml(v.verb)}</span>
+                    <span class="verb-rating ${v.strength >= 4 ? 'tone-success' : 'tone-danger'}">${v.rating}</span>
+                  </div>
+                  <div class="verb-strength">
+                    ${Array.from({ length: 5 }, (_, k) => `<span class="bar ${k < v.strength ? 'filled' : ''}"></span>`).join('')}
+                  </div>
+                </div>`).join('')}
+            </div>
+          </div>`;
+      case 'stat-grid':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <div class="structure-grid">
+              ${s.stats.map((x) => `<div class="structure-item"><div class="s-value tone-${x.tone}">${x.value}</div><div class="s-label">${x.label}</div></div>`).join('')}
+            </div>
+          </div>`;
+      case 'checklist':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <div class="checklist">
+              ${s.present.map((x) => `<div class="check-item"><i class="fas fa-check tone-success"></i> ${x}</div>`).join('')}
+              ${s.missing.map((x) => `<div class="check-item"><i class="fas fa-xmark tone-danger"></i> ${x}</div>`).join('')}
+            </div>
+          </div>`;
+      case 'interview':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <div class="interview-list">
+              ${s.questions.map((q, i) => `<div class="interview-item"><div class="interview-num">${i + 1}</div><div class="interview-text">${q}</div></div>`).join('')}
+            </div>
+          </div>`;
+      case 'salary':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <div class="salary-range">
+              <div class="salary-amount">${s.amount}</div>
+              <div class="salary-note">${s.note}</div>
+            </div>
+          </div>`;
+      case 'factors':
+        return `
+          <div class="result-card">
+            <h4 class="result-card-title"><i class="fas ${s.icon}"></i> ${s.title}</h4>
+            <div class="salary-factors">
+              ${s.items.map((i) => `<div class="factor-row"><span class="factor-label">${i.label}</span><span class="factor-value tone-${i.tone}">${i.value}</span></div>`).join('')}
+            </div>
+          </div>`;
+      default:
+        return '';
+    }
+  }
+
+  /* ==========================================================
+     HISTORY (localStorage only)
+     ========================================================== */
+
+  function initHistory() {
+    $('clearHistoryBtn').addEventListener('click', handleClearHistory);
+    $('historySearch').addEventListener('input', (e) => {
+      state.historyQuery = e.target.value;
+      renderHistory();
+    });
+    $('historyBody').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const id = Number(btn.dataset.id);
+      if (btn.dataset.action === 'view') viewHistoryEntry(id);
+      else deleteHistoryEntry(id);
+    });
+  }
+
+  function saveHistory(data) {
+    const mode = currentMode();
+    const cvName = state.cvFile
+      ? state.cvFile.name
+      : state.cvSource
+        ? state.cvSource.label
+        : 'Pasted CV text';
+    const entry = {
+      id: Date.now(),
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      cvName,
+      mode: mode.title,
+      modeId: mode.id,
+      score: data.score
+    };
+    state.history.unshift(entry);
+    if (state.history.length > HISTORY_LIMIT) state.history.pop();
+    storageSet('sm_history', state.history);
+  }
+
+  function renderHistory() {
+    const query = state.historyQuery.trim().toLowerCase();
+    const items = state.history.filter((h) => (
+      !query || `${h.cvName} ${h.mode} ${h.date}`.toLowerCase().includes(query)
+    ));
+    const hasAny = state.history.length > 0;
+
+    $('historyEmpty').hidden = hasAny;
+    $('historyToolbar').hidden = !hasAny;
+    $('historyNoMatch').hidden = !(hasAny && items.length === 0);
+    $('historyTableWrap').hidden = items.length === 0;
+    $('historyCount').textContent = hasAny ? `${items.length} of ${state.history.length} analyses` : '';
+    $('clearHistoryBtn').disabled = !hasAny;
+
+    const body = $('historyBody');
+    const frag = document.createDocumentFragment();
+    items.forEach((h) => {
+      const tr = document.createElement('tr');
+      const scoreClass = h.score >= 75 ? 'tone-success' : h.score >= 55 ? 'tone-warning' : 'tone-danger';
+      tr.innerHTML = `
+        <td class="td-date">${escapeHtml(h.date)}</td>
+        <td class="td-name" title="${escapeHtml(h.cvName)}">${escapeHtml(h.cvName)}</td>
+        <td>${escapeHtml(h.mode)}</td>
+        <td><span class="history-score ${scoreClass}">${h.score}%</span></td>
+        <td class="td-actions">
+          <button class="btn btn-secondary btn-sm" data-action="view" data-id="${h.id}" type="button"><i class="fas fa-eye"></i> View</button>
+          <button class="btn-icon btn-danger-icon" data-action="delete" data-id="${h.id}" aria-label="Delete entry" type="button"><i class="fas fa-trash-can"></i></button>
+        </td>`;
+      frag.appendChild(tr);
+    });
+    body.innerHTML = '';
+    body.appendChild(frag);
+  }
+
+  function deleteHistoryEntry(id) {
+    const entry = state.history.find((h) => h.id === id);
+    if (!entry) return;
+    state.history = state.history.filter((h) => h.id !== id);
+    storageSet('sm_history', state.history);
+    renderHistory();
+    showToast(`Removed "${entry.cvName}" from history`, 'success');
+  }
+
+  async function handleClearHistory() {
+    if (!state.history.length) return;
+    const ok = await openConfirm({
+      title: 'Clear all history?',
+      message: 'This will permanently delete every saved analysis.',
+      confirmLabel: 'Clear all'
+    });
+    if (!ok) return;
+    state.history = [];
+    storageSet('sm_history', state.history);
+    renderHistory();
+    showToast('History cleared', 'success');
+  }
+
+  /* ==========================================================
+     DETAILED REPORT
+     ========================================================== */
+
+  function initReport() {
+    document.querySelectorAll('.report-tab').forEach((tab) => {
+      tab.addEventListener('click', () => selectReportTab(tab.dataset.reportTab));
+    });
+  }
+
+  function selectReportTab(tabId) {
+    document.querySelectorAll('.report-tab').forEach((t) => t.classList.toggle('active', t.dataset.reportTab === tabId));
+    document.querySelectorAll('.report-panel').forEach((p) => p.classList.toggle('active', p.dataset.reportPanel === tabId));
+    populateReportPanel(tabId);
+  }
+
+  function openReport(data) {
+    state.reportData = data || state.lastResult || generateMockData(state.mode);
+    navigateTo('report');
+  }
+
+  function populateReportPanel(tabId) {
+    const panel = $(`report${cap(tabId)}`);
+    if (!panel) return;
+
+    if (tabId === 'overview') {
+      const data = state.reportData || generateMockData(state.mode);
+      panel.innerHTML = `
+        <div class="result-card">
+          <h4 class="result-card-title"><i class="fas fa-chart-bar"></i> Overall Match</h4>
+          <div class="tech-cols">
+            <div class="score-circle-wrapper">
+              <div class="score-circle" id="reportScoreCircle">
+                <span class="score-value"><span id="reportScoreNumber">0</span><span class="score-pct">%</span></span>
+                <span class="score-label">Match</span>
+              </div>
+            </div>
+            <div>
+              <h5 class="col-label">Skill Breakdown</h5>
+              ${skillsHtml(data.skills)}
             </div>
           </div>
         </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-tags"></i> Keywords</h4>
-        <div class="keywords-grid">
-          <div class="keyword-group"><h5><span class="kw-dot matched"></span> Matched <span class="kw-count">7</span></h5>
-            <div class="tags-container">${MOCK_KEYWORDS.matched.slice(0, 7).map(k => `<span class="tag matched">${k}</span>`).join('')}</div>
-          </div>
-          <div class="keyword-group"><h5><span class="kw-dot missing"></span> Missing <span class="kw-count">4</span></h5>
-            <div class="tags-container">${MOCK_KEYWORDS.missing.slice(0, 4).map(k => `<span class="tag missing">${k}</span>`).join('')}</div>
-          </div>
-        </div>
-      </div>`;
-  } else if (tabId === 'techstack') {
-    panel.innerHTML = `
-      <div class="result-card" style="margin-bottom:1.25rem;">
-        <h4 class="result-card-title"><i class="fas fa-code"></i> Tech Stack Comparison</h4>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;">
-          <div><h5 style="font-size:0.8rem;font-weight:600;margin-bottom:0.5rem;color:var(--text-secondary);">Your CV</h5>
-            <div class="badge-group">${['Python','JavaScript','React','Node.js','PostgreSQL','AWS'].map(t => `<span class="badge primary">${t}</span>`).join('')}</div>
-          </div>
-          <div><h5 style="font-size:0.8rem;font-weight:600;margin-bottom:0.5rem;color:var(--text-secondary);">Job Requires</h5>
-            <div class="badge-group">${['Python','JavaScript','React','Docker','Kubernetes','AWS','MongoDB'].map(t => `<span class="badge">${t}</span>`).join('')}</div>
-          </div>
-        </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-industry"></i> Industry Terminology</h4>
-        <div class="badge-group">
-          <span class="badge primary">Microservices</span><span class="badge primary">RESTful API</span>
-          <span class="badge">Serverless</span><span class="badge">Event-Driven</span>
-        </div>
-      </div>`;
-  } else if (tabId === 'experience') {
-    panel.innerHTML = `
-      <div class="result-card" style="margin-bottom:1.25rem;">
-        <h4 class="result-card-title"><i class="fas fa-clock"></i> Experience Breakdown</h4>
-        <div class="experience-stats">
-          <div class="exp-stat"><div class="exp-value">5.2</div><div class="exp-label">Total Years</div></div>
-          <div class="exp-stat"><div class="exp-value">4</div><div class="exp-label">Relevant Years</div></div>
-          <div class="exp-stat"><div class="exp-value">3</div><div class="exp-label">Companies</div></div>
-          <div class="exp-stat"><div class="exp-value">2.1</div><div class="exp-label">Avg Tenure</div></div>
-        </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-timeline"></i> Career Timeline</h4>
-        <div class="gap-alert" style="margin-bottom:0.75rem;"><i class="fas fa-clock"></i> 8-month gap detected between Jun 2023 & Feb 2024</div>
-        <div style="display:flex;flex-direction:column;gap:0.5rem;font-size:0.85rem;">
-          <div style="display:flex;justify-content:space-between;padding:0.4rem 0.75rem;background:var(--bg);border-radius:var(--radius-sm);"><span>Senior Engineer, TechCorp</span><span style="color:var(--text-muted);">2022 - Present</span></div>
-          <div style="display:flex;justify-content:space-between;padding:0.4rem 0.75rem;background:var(--bg);border-radius:var(--radius-sm);"><span>ML Engineer, DataFlow</span><span style="color:var(--text-muted);">2020 - 2023</span></div>
-          <div style="display:flex;justify-content:space-between;padding:0.4rem 0.75rem;background:var(--bg);border-radius:var(--radius-sm);"><span>Junior Dev, StartUp</span><span style="color:var(--text-muted);">2018 - 2020</span></div>
-        </div>
-      </div>`;
-  } else if (tabId === 'achievements') {
-    panel.innerHTML = `
-      <div class="result-card" style="margin-bottom:1.25rem;">
-        <h4 class="result-card-title"><i class="fas fa-trophy"></i> Quantifiable Wins</h4>
-        <div class="achievement-list">
-          <div class="achievement-item"><i class="fas fa-check-circle"></i> <span>Increased model accuracy by <strong>34%</strong></span></div>
-          <div class="achievement-item"><i class="fas fa-check-circle"></i> <span>Reduced deployment time by <strong>60%</strong></span></div>
-          <div class="achievement-item"><i class="fas fa-check-circle"></i> <span>Managed team of <strong>5</strong> engineers</span></div>
-          <div class="achievement-item"><i class="fas fa-check-circle"></i> <span>Improved query perf by <strong>45%</strong></span></div>
-        </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-pen"></i> Action Verb Analysis</h4>
-        <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.75rem;">Score: <strong style="color:var(--primary);">68%</strong> - Good use of strong verbs</p>
-        <div style="display:flex;flex-direction:column;gap:0.4rem;">
-          <div style="display:flex;justify-content:space-between;font-size:0.8rem;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>Achieved, Led, Delivered</span><span style="color:var(--success);font-weight:600;">Strong</span></div>
-          <div style="display:flex;justify-content:space-between;font-size:0.8rem;padding:0.3rem 0;border-bottom:1px solid var(--border-light);"><span>Worked, Helped, Got</span><span style="color:var(--danger);font-weight:600;">Weak</span></div>
-        </div>
-      </div>`;
-  } else if (tabId === 'structure') {
-    panel.innerHTML = `
-      <div class="result-card" style="margin-bottom:1.25rem;">
-        <h4 class="result-card-title"><i class="fas fa-layer-group"></i> Structure & Readability</h4>
-        <div class="structure-grid">
-          <div class="structure-item"><div class="s-value" style="color:var(--success);">82%</div><div class="s-label">Completeness</div></div>
-          <div class="structure-item"><div class="s-value" style="color:var(--primary);">68</div><div class="s-label">Readability</div></div>
-          <div class="structure-item"><div class="s-value" style="color:var(--success);">90%</div><div class="s-label">Formatting</div></div>
-          <div class="structure-item"><div class="s-value" style="color:var(--warning);">2</div><div class="s-label">Missing</div></div>
-        </div>
-      </div>
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-list"></i> Section Checklist</h4>
-        <div style="display:flex;flex-direction:column;gap:0.35rem;font-size:0.85rem;">
-          ${['Contact Info','Professional Summary','Work Experience','Education','Skills'].map(s => `<div style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-check" style="color:var(--success);"></i> ${s}</div>`).join('')}
-          ${['Certifications','Projects'].map(s => `<div style="display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-xmark" style="color:var(--danger);"></i> ${s}</div>`).join('')}
-        </div>
-      </div>`;
-  } else if (tabId === 'interview') {
-    panel.innerHTML = `
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-question"></i> Generated Questions</h4>
-        <div class="interview-list">
-          ${[1,2,3,4,5].map(n => {
-            const questions = [
-              'Explain the difference between supervised and unsupervised learning.',
-              'How would you design a real-time data processing system?',
-              'Describe optimizing a slow database query.',
-              'Explain RESTful API design principles.',
-              'What is the CAP theorem and how does it apply?'
-            ];
-            return `<div class="interview-item"><div class="interview-num">${n}</div><div class="interview-text">${questions[n-1]}</div></div>`;
-          }).join('')}
-        </div>
-      </div>`;
-  } else if (tabId === 'salary') {
-    panel.innerHTML = `
-      <div class="result-card">
-        <h4 class="result-card-title"><i class="fas fa-dollar-sign"></i> Market Rate</h4>
-        <div class="salary-range">
-          <div class="salary-amount">$135K - $175K</div>
-          <div class="salary-note">Annual salary estimate for your profile</div>
-        </div>
-      </div>
-      <div class="result-card" style="margin-top:1.25rem;">
-        <h4 class="result-card-title"><i class="fas fa-sliders"></i> Factors</h4>
-        <div class="salary-factors">
-          <div class="factor-row"><span class="factor-label">Tech Stack</span><span class="factor-value" style="color:var(--success);">+$15K</span></div>
-          <div class="factor-row"><span class="factor-label">Experience</span><span class="factor-value" style="color:var(--success);">+$10K</span></div>
-          <div class="factor-row"><span class="factor-label">Location</span><span class="factor-value" style="color:var(--text);">-$5K</span></div>
-          <div class="factor-row"><span class="factor-label">Skill Gaps</span><span class="factor-value" style="color:var(--danger);">-$8K</span></div>
-          <div class="factor-row"><span class="factor-label">Industry Demand</span><span class="factor-value" style="color:var(--success);">+$12K</span></div>
-        </div>
-      </div>`;
+        <div class="result-card" style="margin-top:1.25rem;">
+          <h4 class="result-card-title"><i class="fas fa-tags"></i> Keywords</h4>
+          ${keywordsHtml(data)}
+        </div>`;
+      animateScore($('reportScoreCircle'), $('reportScoreNumber'), data.score);
+      animateBars(panel);
+      return;
+    }
+
+    panel.innerHTML = (MODE_SECTIONS[tabId] || []).map(renderSection).join('');
   }
-}
 
-function showToast(msg, type = 'success') {
-  const container = document.getElementById('toast-container');
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'circle-exclamation'}"></i> ${msg}`;
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.classList.add('toast-out');
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
+  function viewHistoryEntry(id) {
+    const entry = state.history.find((h) => h.id === id);
+    if (!entry) return;
+    const mock = generateMockData(entry.modeId);
+    openReport({ ...mock, score: entry.score });
+  }
 
-function showError(msg) {
-  document.getElementById('errorMessage').textContent = msg;
-  document.getElementById('errorToast').hidden = false;
-  setTimeout(() => document.getElementById('errorToast').hidden = true, 5000);
-}
+  /* ==========================================================
+     RESULTS SIDE ACTIONS
+     ========================================================== */
 
-function initMobileMenu() {
-  document.getElementById('mobileMenuBtn').addEventListener('click', () => {
-    document.getElementById('navLinks').classList.toggle('open');
-  });
-}
+  function initResultsActions() {
+    $('reportBtn').addEventListener('click', () => openReport());
+    $('exportPdfBtn').addEventListener('click', exportPdf);
+    $('shareBtn').addEventListener('click', shareResults);
+    $('newAnalysisBtn').addEventListener('click', resetAnalysis);
+    $('dismissError').addEventListener('click', hideError);
+    $('backToDashboard').addEventListener('click', () => navigateTo('dashboard'));
+  }
+
+  function exportPdf() {
+    // TODO: FastAPI / real export — replace with a server-side PDF
+    // generation endpoint or a library when required.
+    showToast('Opening print dialog — choose "Save as PDF"', 'info');
+    setTimeout(() => window.print(), 300);
+  }
+
+  function shareResults() {
+    const score = state.lastResult ? `${state.lastResult.score}%` : '--';
+    const text = `SkillMatch Pro — ${currentMode().title}: ${score} match`;
+    const done = () => showToast('Results summary copied to clipboard', 'success');
+    const fail = () => showToast('Could not copy to clipboard', 'error');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(fail);
+    } else {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        done();
+      } catch (e) {
+        fail();
+      }
+    }
+  }
+
+  function resetAnalysis() {
+    state.runTimers.forEach(clearTimeout);
+    state.runTimers = [];
+    state.analyzing = false;
+    state.cvFile = null;
+    state.jdFile = null;
+    state.cvSource = null;
+    state.jdSource = null;
+    state.cvText = '';
+    state.jdText = '';
+
+    clearFileInArea(cvUpload);
+    clearFileInArea(jdUpload);
+    document.querySelectorAll('[data-imported-state]').forEach((el) => { el.hidden = true; });
+    document.querySelectorAll('[data-url-input]').forEach((el) => { el.value = ''; });
+    $('cvTextarea').value = '';
+    $('jdTextarea').value = '';
+    $('cvCharCount').textContent = '0';
+    $('jdCharCount').textContent = '0';
+    $('resultsSection').hidden = true;
+    $('resultsSkeleton').hidden = true;
+    $('liveLogs').hidden = true;
+    $('liveLogs').classList.remove('is-running');
+    hideError();
+    setLogStatus('running');
+    updateAnalyzeBtn();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ==========================================================
+     PRICING (design only — no payment integration)
+     ========================================================== */
+
+  function initPricing() {
+    document.querySelectorAll('.pricing-cta').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        // TODO: FastAPI / payments — wire this to a real checkout flow later.
+        showToast('Plan selection will be available soon', 'info');
+      });
+    });
+  }
+
+  /* ==========================================================
+     TOASTS, ERRORS & CONFIRM MODAL
+     ========================================================== */
+
+  function showToast(msg, type = 'success') {
+    const icons = { success: 'fa-check-circle', error: 'fa-circle-exclamation', info: 'fa-circle-info' };
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<i class="fas ${icons[type] || icons.success}"></i><span>${escapeHtml(msg)}</span>`;
+    $('toast-container').appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add('toast-out');
+      setTimeout(() => toast.remove(), 260);
+    }, 3200);
+  }
+
+  let errorTimer = null;
+
+  function showError(msg) {
+    $('errorMessage').textContent = msg;
+    $('errorToast').hidden = false;
+    clearTimeout(errorTimer);
+    errorTimer = setTimeout(hideError, 5000);
+  }
+
+  function hideError() {
+    clearTimeout(errorTimer);
+    $('errorToast').hidden = true;
+  }
+
+  let confirmCallback = null;
+  let confirmLastFocus = null;
+
+  function initConfirmModal() {
+    $('confirmCancel').addEventListener('click', () => settleConfirm(false));
+    $('confirmOk').addEventListener('click', () => settleConfirm(true));
+    $('confirmModal').addEventListener('click', (e) => {
+      if (e.target === $('confirmModal')) settleConfirm(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !$('confirmModal').hidden) settleConfirm(false);
+    });
+  }
+
+  function openConfirm({ title, message, confirmLabel = 'Confirm' }) {
+    $('confirmTitle').textContent = title;
+    $('confirmMessage').textContent = message;
+    $('confirmOk').textContent = confirmLabel;
+    confirmLastFocus = document.activeElement;
+    $('confirmModal').hidden = false;
+    $('confirmCancel').focus();
+    return new Promise((resolve) => { confirmCallback = resolve; });
+  }
+
+  function settleConfirm(result) {
+    if (!confirmCallback) return;
+    const cb = confirmCallback;
+    confirmCallback = null;
+    $('confirmModal').hidden = true;
+    if (confirmLastFocus) confirmLastFocus.focus();
+    cb(result);
+  }
+
+  /* ==========================================================
+     INIT
+     ========================================================== */
+
+  let initialized = false;
+
+  function init() {
+    // Guard against double initialization (e.g. script loaded twice).
+    if (initialized) return;
+    initialized = true;
+
+    initTheme();
+    initNavigation();
+    initTabs();
+    initSubTabs();
+    initUploads();
+    initCharCounters();
+    initModeSelector();
+    initHomeFeatures();
+    initLinkImports();
+    initProfile();
+    initHistory();
+    initReport();
+    initAnalyzeButton();
+    initResultsActions();
+    initPricing();
+    initMobileMenu();
+    initConfirmModal();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();

@@ -5,31 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SkillMatch Pro - AI-Powered CV Analyzer</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <script src="https://cdn.tailwindcss.com">
-    tailwind.config = {
-      corePlugins: { preflight: false }
-    }
-  </script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
   <div class="app-container">
     <nav class="navbar">
       <div class="nav-inner">
-        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
           <i class="fas fa-bars"></i>
         </button>
-        <a href="#" class="nav-logo" data-page="home">
+        <a href="#" class="nav-logo" data-page="home" aria-label="SkillMatch Pro home">
           <i class="fas fa-brain"></i>
           <span class="logo-text">SkillMatch<span class="logo-accent">Pro</span></span>
         </a>
-        <div class="nav-links" id="navLinks">
+        <nav class="nav-links" id="navLinks" aria-label="Main navigation">
           <a href="#" class="nav-link active" data-page="home"><i class="fas fa-home"></i> Home</a>
           <a href="#" class="nav-link" data-page="dashboard"><i class="fas fa-chart-bar"></i> Dashboard</a>
           <a href="#" class="nav-link" data-page="history"><i class="fas fa-clock-rotate"></i> History</a>
           <a href="#" class="nav-link" data-page="profile"><i class="fas fa-user"></i> Profile</a>
           <a href="#" class="nav-link" data-page="pricing"><i class="fas fa-tag"></i> Pricing</a>
-        </div>
+        </nav>
         <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
           <i class="fas fa-moon"></i>
           <i class="fas fa-sun"></i>
@@ -37,7 +33,7 @@
       </div>
     </nav>
 
-    <main>
+    <main id="main">
       <!-- ========== HOME PAGE ========== -->
       <section id="page-home" class="page active">
         <div class="hero">
@@ -94,7 +90,7 @@
             </div>
             <div class="card-body">
               <div class="tab-content active" data-tab-content="cv-upload">
-                <div class="upload-area" id="uploadArea">
+                <div class="upload-area" id="uploadArea" role="button" tabindex="0" aria-label="Upload CV file">
                   <input type="file" id="cvFileInput" accept=".pdf,.docx" hidden>
                   <div class="upload-content" id="uploadContent">
                     <i class="fas fa-cloud-arrow-up upload-icon"></i>
@@ -177,7 +173,11 @@
                 </div>
               </div>
               <div class="tab-content" data-tab-content="cv-text">
-                <textarea class="input-textarea" placeholder="Paste your CV text here..." rows="6"></textarea>
+                <div class="textarea-wrapper">
+                  <label class="sr-only" for="cvTextarea">CV text</label>
+                  <textarea class="input-textarea" id="cvTextarea" placeholder="Paste your CV text here..." rows="6" maxlength="10000"></textarea>
+                  <div class="char-counter"><span id="cvCharCount">0</span> / 10000</div>
+                </div>
               </div>
             </div>
           </div>
@@ -193,11 +193,21 @@
             </div>
             <div class="card-body">
               <div class="tab-content" data-tab-content="jd-upload">
-                <div class="upload-area upload-area-sm" id="jdUploadArea">
-                  <input type="file" accept=".pdf,.docx,.txt" hidden>
-                  <div class="upload-content">
+                <div class="upload-area upload-area-sm" id="jdUploadArea" role="button" tabindex="0" aria-label="Upload job description file">
+                  <input type="file" id="jdFileInput" accept=".pdf,.docx,.txt" hidden>
+                  <div class="upload-content" id="jdUploadContent">
                     <i class="fas fa-cloud-arrow-up upload-icon upload-icon-sm"></i>
                     <p class="upload-text upload-text-sm">Upload JD file</p>
+                    <p class="upload-hint">PDF, DOCX or TXT &mdash; Max 10MB</p>
+                  </div>
+                  <div class="file-info" id="jdFileInfo" hidden>
+                    <div class="file-details">
+                      <i class="fas fa-file-lines file-type-icon"></i>
+                      <span class="file-name" id="jdFileName"></span>
+                    </div>
+                    <button class="btn-icon btn-danger-icon" id="removeJdFileBtn" aria-label="Remove JD file">
+                      <i class="fas fa-xmark"></i>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -238,17 +248,30 @@
           </span>
         </button>
 
-        <div class="live-logs" id="liveLogs" hidden>
+        <div class="live-logs is-running" id="liveLogs" hidden>
           <div class="logs-header">
             <i class="fas fa-terminal"></i> Live Logs
-            <span class="logs-status" id="logsStatus">Running</span>
+            <span class="logs-status is-running" id="logsStatus" role="status">
+              <i class="fas fa-circle"></i> Running
+            </span>
           </div>
-          <div class="logs-body" id="logsBody">
-            <div class="log-line log-info"><i class="fas fa-circle"></i> Initializing analysis...</div>
-            <div class="log-line log-info"><i class="fas fa-circle"></i> Parsing CV document...</div>
-            <div class="log-line log-info"><i class="fas fa-circle"></i> Extracting keywords...</div>
-            <div class="log-line log-info"><i class="fas fa-circle"></i> Computing match score...</div>
-            <div class="log-line log-success"><i class="fas fa-check"></i> Analysis complete</div>
+          <div class="logs-body" id="logsBody" role="log" aria-live="polite" aria-label="Analysis progress logs"></div>
+        </div>
+
+        <div class="results-skeleton" id="resultsSkeleton" hidden aria-hidden="true">
+          <div class="skeleton-card">
+            <div class="skeleton skeleton-circle"></div>
+            <div class="skeleton skeleton-line w-60 skeleton-gap"></div>
+            <div class="skeleton skeleton-line w-80"></div>
+            <div class="skeleton skeleton-line w-40"></div>
+          </div>
+          <div class="skeleton-card">
+            <div class="skeleton skeleton-line w-40"></div>
+            <div class="skeleton skeleton-bar"></div>
+            <div class="skeleton skeleton-line w-60"></div>
+            <div class="skeleton skeleton-bar"></div>
+            <div class="skeleton skeleton-line w-50"></div>
+            <div class="skeleton skeleton-bar"></div>
           </div>
         </div>
 
@@ -256,6 +279,7 @@
           <div class="results-header">
             <h2><i class="fas fa-chart-bar"></i> Analysis Results</h2>
             <div class="results-actions">
+              <button class="btn btn-secondary btn-sm" id="reportBtn"><i class="fas fa-file-lines"></i> Detailed Report</button>
               <button class="btn btn-secondary btn-sm" id="exportPdfBtn"><i class="fas fa-file-pdf"></i> Export PDF</button>
               <button class="btn btn-secondary btn-sm" id="shareBtn"><i class="fas fa-share-nodes"></i> Share</button>
               <button class="btn btn-secondary btn-sm" id="newAnalysisBtn"><i class="fas fa-rotate"></i> New Analysis</button>
@@ -266,7 +290,7 @@
             <div class="result-card score-card">
               <div class="score-circle-wrapper">
                 <div class="score-circle" id="scoreCircle">
-                  <span class="score-value" id="scoreValue">0<span class="score-pct">%</span></span>
+                  <span class="score-value"><span id="scoreNumber">0</span><span class="score-pct">%</span></span>
                   <span class="score-label">Match Score</span>
                 </div>
               </div>
@@ -282,7 +306,7 @@
               <div class="skill-bars" id="skillBars"></div>
             </div>
 
-            <div id="modeSpecificCards"></div>
+            <div class="mode-cards-grid" id="modeSpecificCards"></div>
 
             <div class="result-card keywords-card">
               <h4 class="result-card-title"><i class="fas fa-tags"></i> Keyword Analysis</h4>
@@ -300,7 +324,7 @@
           </div>
         </div>
 
-        <div class="error-toast" id="errorToast" hidden>
+        <div class="error-toast" id="errorToast" role="alert" hidden>
           <i class="fas fa-circle-exclamation"></i>
           <span id="errorMessage">Error message here</span>
           <button class="btn-icon" id="dismissError"><i class="fas fa-xmark"></i></button>
@@ -346,11 +370,23 @@
         </div>
 
         <div class="card">
+          <div class="history-toolbar" id="historyToolbar" hidden>
+            <div class="history-search">
+              <i class="fas fa-magnifying-glass"></i>
+              <input type="search" id="historySearch" class="input-text" placeholder="Search by CV name, mode or date..." aria-label="Search history">
+            </div>
+            <span class="history-count" id="historyCount"></span>
+          </div>
           <div class="history-empty" id="historyEmpty">
             <i class="fas fa-clock-rotate"></i>
             <h3>No analyses yet</h3>
             <p>Run your first CV analysis to see it here.</p>
             <a href="#" class="btn btn-primary" data-page="dashboard"><i class="fas fa-rocket"></i> Start Analyzing</a>
+          </div>
+          <div class="history-empty" id="historyNoMatch" hidden>
+            <i class="fas fa-magnifying-glass"></i>
+            <h3>No matching analyses</h3>
+            <p>Try a different search term.</p>
           </div>
           <div class="history-table-wrap" id="historyTableWrap" hidden>
             <table class="history-table">
@@ -434,7 +470,7 @@
               <li><i class="fas fa-xmark"></i> Detailed reports</li>
               <li><i class="fas fa-xmark"></i> Salary Intel</li>
             </ul>
-            <button class="btn btn-secondary btn-full">Get Started</button>
+            <button class="btn btn-secondary btn-full pricing-cta" type="button">Get Started</button>
           </div>
 
           <div class="pricing-card pricing-popular">
@@ -452,7 +488,7 @@
               <li><i class="fas fa-check"></i> Salary Intel</li>
               <li><i class="fas fa-check"></i> Priority support</li>
             </ul>
-            <button class="btn btn-primary btn-full">Start Free Trial</button>
+            <button class="btn btn-primary btn-full pricing-cta" type="button">Start Free Trial</button>
           </div>
 
           <div class="pricing-card">
@@ -469,14 +505,26 @@
               <li><i class="fas fa-check"></i> Dedicated support</li>
               <li><i class="fas fa-check"></i> SSO & Security</li>
             </ul>
-            <button class="btn btn-secondary btn-full">Contact Sales</button>
+            <button class="btn btn-secondary btn-full pricing-cta" type="button">Contact Sales</button>
           </div>
         </div>
       </section>
     </main>
   </div>
 
-  <div id="toast-container"></div>
+  <div id="toast-container" role="status" aria-live="polite"></div>
+
+  <div class="modal-overlay" id="confirmModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <h3 class="modal-title" id="confirmTitle">Are you sure?</h3>
+      <p class="modal-message" id="confirmMessage"></p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="confirmCancel" type="button">Cancel</button>
+        <button class="btn btn-danger" id="confirmOk" type="button">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>

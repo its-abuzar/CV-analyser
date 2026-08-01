@@ -1,0 +1,104 @@
+============================================================
+CV ANALYZER PROJECT INSPECTOR
+============================================================
+
+Generated: 2026-08-01 16:48:02.122836
+
+============================================================
+PROJECT STATISTICS
+============================================================
+
+Folders      : 18
+Files        : 22
+Python Files : 12
+HTML Files   : 1
+CSS Files    : 1
+JS Files     : 1
+
+============================================================
+DIRECTORY TREE
+============================================================
+
+CV Scanner Project/
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── __init__.py
+│   │   ├── config/
+│   │   │   └── __init__.py
+│   │   ├── database/
+│   │   │   └── __init__.py
+│   │   ├── integrations/
+│   │   │   └── __init__.py
+│   │   ├── models/
+│   │   │   └── __init__.py
+│   │   ├── pipeline/
+│   │   │   └── __init__.py
+│   │   ├── schemas/
+│   │   │   └── __init__.py
+│   │   ├── services/
+│   │   │   └── __init__.py
+│   │   ├── utils/
+│   │   │   └── __init__.py
+│   │   ├── __init__.py
+│   │   └── main.py
+│   ├── tests/
+│   │   └── .gitkeep
+│   ├── uploads/
+│   │   └── .gitkeep
+│   ├── .env
+│   └── requirements.txt
+├── docs/
+│   ├── api/
+│   ├── architecture/
+│   ├── screenshots/
+│   └── .gitkeep
+├── frontend/
+│   ├── index.html
+│   ├── script.js
+│   └── style.css
+├── .gitignore
+├── LICENSE
+├── project_structure.py
+└── project_structure.txt
+
+============================================================
+FILE SIZES
+============================================================
+
+       523 bytes   .gitignore
+       617 bytes   backend\.env
+         0 bytes   backend\app\__init__.py
+         0 bytes   backend\app\api\__init__.py
+         0 bytes   backend\app\config\__init__.py
+         0 bytes   backend\app\database\__init__.py
+         0 bytes   backend\app\integrations\__init__.py
+         0 bytes   backend\app\main.py
+         0 bytes   backend\app\models\__init__.py
+         0 bytes   backend\app\pipeline\__init__.py
+         0 bytes   backend\app\schemas\__init__.py
+         0 bytes   backend\app\services\__init__.py
+         0 bytes   backend\app\utils\__init__.py
+       210 bytes   backend\requirements.txt
+         0 bytes   backend\tests\.gitkeep
+         0 bytes   backend\uploads\.gitkeep
+         0 bytes   docs\.gitkeep
+     28677 bytes   frontend\index.html
+     59210 bytes   frontend\script.js
+     44062 bytes   frontend\style.css
+      1091 bytes   LICENSE
+      4405 bytes   project_structure.py
+
+============================================================
+MISSING __init__.py
+============================================================
+
+docs\api
+
+============================================================
+EMPTY DIRECTORIES
+============================================================
+
+docs\api
+docs\architecture
+docs\screenshots

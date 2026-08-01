@@ -1,0 +1,14 @@
+# ===========================
+# Core Framework
+# ===========================
+fastapi
+uvicorn[standard]
+
+# File Uploads
+python-multipart
+
+# Validation
+pydantic
+
+# Environment Variables
+python-dotenv

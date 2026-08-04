@@ -682,20 +682,56 @@
     $('analyzeBtn').disabled = !canAnalyze();
   }
 
-  function runAnalysis() {
+  async function runAnalysis() {
     if (state.analyzing) return;
-    const problem = analysisBlockers();
-    if (problem) {
-      showError(problem);
+
+    /* ---- Grab inputs ---- */
+    const file = state.cvFile;                       // from file-input state
+    const jobDescription = state.jdText.trim();      // from textarea state
+    const mode = state.mode;                         // selected mode card
+
+    /* ---- Validate ---- */
+    if (!file) {
+      showError('Please upload a resume file (PDF or DOCX) before analyzing.');
       return;
     }
+    if (!jobDescription) {
+      showError('Please enter or paste a job description before analyzing.');
+      return;
+    }
+
     startAnalysisUi();
 
-    // TODO: FastAPI — replace with the fetch() request described above.
-    runSimulatedLogs(() => {
-      const data = generateMockData(state.mode);
+    /* ---- Build FormData & call backend ---- */
+    try {
+      const form = new FormData();
+      form.append('resume', file);
+      form.append('job_description', jobDescription);
+      form.append('mode', mode);
+
+      const res = await fetch('http://127.0.0.1:8000/analyze', {
+        method: 'POST',
+        body: form
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.detail || `Server returned ${res.status}`);
+      }
+
+      const data = await res.json();
       finishAnalysis(data);
-    });
+    } catch (err) {
+      /* Reset the UI so the user can retry */
+      state.analyzing = false;
+      $('analyzeBtn').querySelector('.btn-text').hidden = false;
+      $('analyzeBtn').querySelector('.btn-loader').hidden = true;
+      $('resultsSkeleton').hidden = true;
+      $('liveLogs').hidden = true;
+      updateAnalyzeBtn();
+      showError(err.message || 'Analysis failed — is the backend running?');
+      showToast('Analysis failed', 'error');
+    }
   }
 
   function startAnalysisUi() {

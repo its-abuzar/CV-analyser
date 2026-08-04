@@ -17,24 +17,27 @@ app.add_middleware(
 def root():
     return {"message": "SkillMatch Pro Backend is running!"}
 
-
 @app.post("/analyze")
 def analyze(
     resume: UploadFile = File(...),
     job_description: str = Form(...),
     mode: str = Form(...)
 ):
+    # Save the file (keep this)
     os.makedirs("uploads", exist_ok=True)
-
     file_path = os.path.join("uploads", resume.filename)
-
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(resume.file, buffer)
 
+    # Return mock data in the exact format your frontend expects
     return {
-        "success": True,
-        "filename": resume.filename,
-        "job_description": job_description,
-        "mode": mode,
-        "message": "Mock analysis completed."
+        "score": 87,
+        "skills": [
+            {"label": "Technical Skills", "value": 82},
+            {"label": "Domain Knowledge", "value": 65},
+            {"label": "Soft Skills", "value": 71}
+        ],
+        "matched": ["Python", "SQL", "Git", "FastAPI", "Machine Learning", "Data Analysis", "AWS"],
+        "missing": ["Docker", "Kubernetes", "Redis", "CI/CD"],
+        "mode": mode
     }

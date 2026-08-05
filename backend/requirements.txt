@@ -12,3 +12,6 @@ pydantic
 
 # Environment Variables
 python-dotenv
+
+# PDF / Document Parsing
+docling

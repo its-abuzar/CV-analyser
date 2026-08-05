@@ -707,32 +707,65 @@
     form.append('job_description', jobDescription);
     form.append('mode', mode);
 
-    // Show simulated logs while waiting for the backend
-    runSimulatedLogs(async () => {
-      try {
-        const res = await fetch('http://127.0.0.1:8000/analyze', {
-          method: 'POST',
-          body: form
-        });
+    // --- Run fetch & simulated logs in PARALLEL ---
+    // Results are shown only after BOTH the backend response arrives
+    // AND the log animation finishes, whichever is later.
+    let fetchDone = false;
+    let logsDone  = false;
+    let fetchResult = null;   // holds { ok: true, data } or { ok: false, error }
 
-        if (!res.ok) {
-          const errBody = await res.json().catch(() => ({}));
-          throw new Error(errBody.detail || `Server returned ${res.status}`);
-        }
-
-        const data = await res.json();
-        finishAnalysis(data);
-      } catch (err) {
-        state.analyzing = false;
-        $('analyzeBtn').querySelector('.btn-text').hidden = false;
-        $('analyzeBtn').querySelector('.btn-loader').hidden = true;
-        $('resultsSkeleton').hidden = true;
-        $('liveLogs').hidden = true;
-        updateAnalyzeBtn();
-        showError(err.message || 'Analysis failed — is the backend running?');
-        showToast('Analysis failed', 'error');
+    const tryFinish = () => {
+      if (!fetchDone || !logsDone) return;           // wait for both
+      if (!fetchResult.ok) {
+        resetAnalysisUi();
+        showError(fetchResult.error || 'Analysis failed — is the backend running?');
+        showToast('Analysis failed — is the backend running?', 'error');
+        return;
       }
+      finishAnalysis(fetchResult.data);
+    };
+
+    // 1. Fire the backend request immediately
+    fetch('http://127.0.0.1:8000/analyze', {
+      method: 'POST',
+      body: form
+    })
+      .then((res) => {
+        if (!res.ok) {
+          return res.json()
+            .catch(() => ({}))
+            .then((body) => {
+              throw new Error(body.detail || `Server returned ${res.status}`);
+            });
+        }
+        return res.json();
+      })
+      .then((data) => {
+        fetchResult = { ok: true, data };
+        fetchDone = true;
+        tryFinish();
+      })
+      .catch((err) => {
+        fetchResult = { ok: false, error: err.message };
+        fetchDone = true;
+        tryFinish();
+      });
+
+    // 2. Play the log animation (calls tryFinish when the last line is done)
+    runSimulatedLogs(() => {
+      logsDone = true;
+      tryFinish();
     });
+  }
+
+  /** Reset the analysis UI back to the ready state (used on errors). */
+  function resetAnalysisUi() {
+    state.analyzing = false;
+    $('analyzeBtn').querySelector('.btn-text').hidden = false;
+    $('analyzeBtn').querySelector('.btn-loader').hidden = true;
+    $('resultsSkeleton').hidden = true;
+    $('liveLogs').hidden = true;
+    updateAnalyzeBtn();
   }
 
   function startAnalysisUi() {
@@ -749,6 +782,7 @@
   }
 
   function finishAnalysis(data) {
+    console.log('finishAnalysis called with:', data);
     state.analyzing = false;
     state.lastResult = data;
     $('analyzeBtn').querySelector('.btn-text').hidden = false;
@@ -947,6 +981,7 @@ Nice to have:
      ========================================================== */
 
   function displayResults(data) {
+    console.log('displayResults called with:', data);
     animateScore($('scoreCircle'), $('scoreNumber'), data.score);
     $('statMatched').textContent = data.matched.length;
     $('statMissing').textContent = data.missing.length;

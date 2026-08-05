@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +8,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="app-container">
     <nav class="navbar">
       <div class="nav-inner">
-        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false"
+          aria-controls="navLinks">
           <i class="fas fa-bars"></i>
         </button>
         <a href="#" class="nav-logo" data-page="home" aria-label="SkillMatch Pro home">
@@ -39,10 +42,13 @@
         <div class="hero">
           <div class="hero-badge"><i class="fas fa-sparkles"></i> AI-Powered Analysis</div>
           <h1 class="hero-title">Match Smarter.<br>Not Harder.</h1>
-          <p class="hero-subtitle">Upload your CV, paste a job description, and let AI find the perfect fit across 40+ dimensions.</p>
+          <p class="hero-subtitle">Upload your CV, paste a job description, and let AI find the perfect fit across 40+
+            dimensions.</p>
           <div class="hero-actions">
-            <a href="#" class="btn btn-primary btn-lg" data-page="dashboard"><i class="fas fa-rocket"></i> Start Analyzing</a>
-            <a href="#" class="btn btn-secondary btn-lg" data-page="pricing">See Pricing <i class="fas fa-arrow-right"></i></a>
+            <a href="#" class="btn btn-primary btn-lg" data-page="dashboard"><i class="fas fa-rocket"></i> Start
+              Analyzing</a>
+            <a href="#" class="btn btn-secondary btn-lg" data-page="pricing">See Pricing <i
+                class="fas fa-arrow-right"></i></a>
           </div>
         </div>
 
@@ -118,25 +124,30 @@
                     <div class="connect-box">
                       <i class="fab fa-linkedin connect-icon"></i>
                       <p class="connect-text">Connect your LinkedIn profile to import your CV automatically.</p>
-                      <button class="btn btn-secondary" data-connect="linkedin"><i class="fab fa-linkedin"></i> Connect LinkedIn</button>
+                      <button class="btn btn-secondary" data-connect="linkedin"><i class="fab fa-linkedin"></i> Connect
+                        LinkedIn</button>
                     </div>
                   </div>
                   <div class="sub-panel" data-sub-panel="link">
                     <div class="link-input-row">
                       <i class="fab fa-linkedin"></i>
-                      <input type="url" class="input-text" placeholder="Paste your LinkedIn profile URL..." data-url-input="cv-linkedin">
-                      <button class="btn btn-primary" data-import-btn="cv-linkedin"><i class="fas fa-arrow-down"></i> Import</button>
+                      <input type="url" class="input-text" placeholder="Paste your LinkedIn profile URL..."
+                        data-url-input="cv-linkedin">
+                      <button class="btn btn-primary" data-import-btn="cv-linkedin"><i class="fas fa-arrow-down"></i>
+                        Import</button>
                     </div>
                     <div class="profile-hint" data-profile-hint="linkedin" hidden>
                       <i class="fas fa-user"></i>
                       <a data-profile-link href="#" target="_blank" rel="noopener"></a>
-                      <button class="btn btn-secondary btn-sm" data-use-profile="linkedin"><i class="fas fa-rotate-left"></i> Use default</button>
+                      <button class="btn btn-secondary btn-sm" data-use-profile="linkedin"><i
+                          class="fas fa-rotate-left"></i> Use default</button>
                     </div>
                   </div>
                   <div class="imported-state" data-imported-state="cv-linkedin" hidden>
                     <i class="fas fa-check-circle"></i>
                     <span data-imported-label></span>
-                    <button class="btn-icon btn-danger-icon" data-remove-import="cv-linkedin" aria-label="Remove imported link"><i class="fas fa-xmark"></i></button>
+                    <button class="btn-icon btn-danger-icon" data-remove-import="cv-linkedin"
+                      aria-label="Remove imported link"><i class="fas fa-xmark"></i></button>
                   </div>
                 </div>
               </div>
@@ -150,32 +161,38 @@
                     <div class="connect-box">
                       <i class="fab fa-github connect-icon"></i>
                       <p class="connect-text">Connect your GitHub to analyze your repositories and projects.</p>
-                      <button class="btn btn-secondary" data-connect="github"><i class="fab fa-github"></i> Connect GitHub</button>
+                      <button class="btn btn-secondary" data-connect="github"><i class="fab fa-github"></i> Connect
+                        GitHub</button>
                     </div>
                   </div>
                   <div class="sub-panel" data-sub-panel="link">
                     <div class="link-input-row">
                       <i class="fab fa-github"></i>
-                      <input type="url" class="input-text" placeholder="Paste your GitHub profile URL..." data-url-input="cv-github">
-                      <button class="btn btn-primary" data-import-btn="cv-github"><i class="fas fa-arrow-down"></i> Import</button>
+                      <input type="url" class="input-text" placeholder="Paste your GitHub profile URL..."
+                        data-url-input="cv-github">
+                      <button class="btn btn-primary" data-import-btn="cv-github"><i class="fas fa-arrow-down"></i>
+                        Import</button>
                     </div>
                     <div class="profile-hint" data-profile-hint="github" hidden>
                       <i class="fas fa-user"></i>
                       <a data-profile-link href="#" target="_blank" rel="noopener"></a>
-                      <button class="btn btn-secondary btn-sm" data-use-profile="github"><i class="fas fa-rotate-left"></i> Use default</button>
+                      <button class="btn btn-secondary btn-sm" data-use-profile="github"><i
+                          class="fas fa-rotate-left"></i> Use default</button>
                     </div>
                   </div>
                   <div class="imported-state" data-imported-state="cv-github" hidden>
                     <i class="fas fa-check-circle"></i>
                     <span data-imported-label></span>
-                    <button class="btn-icon btn-danger-icon" data-remove-import="cv-github" aria-label="Remove imported link"><i class="fas fa-xmark"></i></button>
+                    <button class="btn-icon btn-danger-icon" data-remove-import="cv-github"
+                      aria-label="Remove imported link"><i class="fas fa-xmark"></i></button>
                   </div>
                 </div>
               </div>
               <div class="tab-content" data-tab-content="cv-text">
                 <div class="textarea-wrapper">
                   <label class="sr-only" for="cvTextarea">CV text</label>
-                  <textarea class="input-textarea" id="cvTextarea" placeholder="Paste your CV text here..." rows="6" maxlength="10000"></textarea>
+                  <textarea class="input-textarea" id="cvTextarea" placeholder="Paste your CV text here..." rows="6"
+                    maxlength="10000"></textarea>
                   <div class="char-counter"><span id="cvCharCount">0</span> / 10000</div>
                 </div>
               </div>
@@ -193,7 +210,8 @@
             </div>
             <div class="card-body">
               <div class="tab-content" data-tab-content="jd-upload">
-                <div class="upload-area upload-area-sm" id="jdUploadArea" role="button" tabindex="0" aria-label="Upload job description file">
+                <div class="upload-area upload-area-sm" id="jdUploadArea" role="button" tabindex="0"
+                  aria-label="Upload job description file">
                   <input type="file" id="jdFileInput" accept=".pdf,.docx,.txt" hidden>
                   <div class="upload-content" id="jdUploadContent">
                     <i class="fas fa-cloud-arrow-up upload-icon upload-icon-sm"></i>
@@ -214,19 +232,24 @@
               <div class="tab-content" data-tab-content="jd-linkedin">
                 <div class="link-input-row">
                   <i class="fab fa-linkedin"></i>
-                  <input type="url" class="input-text" placeholder="Paste the LinkedIn job posting URL..." data-url-input="jd-linkedin">
-                  <button class="btn btn-primary" data-import-btn="jd-linkedin"><i class="fas fa-arrow-down"></i> Import Job</button>
+                  <input type="url" class="input-text" placeholder="Paste the LinkedIn job posting URL..."
+                    data-url-input="jd-linkedin">
+                  <button class="btn btn-primary" data-import-btn="jd-linkedin"><i class="fas fa-arrow-down"></i> Import
+                    Job</button>
                 </div>
-                <p class="field-hint"><i class="fas fa-circle-info"></i> Paste the link to any LinkedIn job posting to import the full description for analysis.</p>
+                <p class="field-hint"><i class="fas fa-circle-info"></i> Paste the link to any LinkedIn job posting to
+                  import the full description for analysis.</p>
                 <div class="imported-state" id="jdImportedState" data-imported-state="jd-linkedin" hidden>
                   <i class="fas fa-check-circle"></i>
                   <span data-imported-label>LinkedIn posting imported</span>
-                  <button class="btn-icon btn-danger-icon" data-remove-import="jd-linkedin" aria-label="Remove imported job"><i class="fas fa-xmark"></i></button>
+                  <button class="btn-icon btn-danger-icon" data-remove-import="jd-linkedin"
+                    aria-label="Remove imported job"><i class="fas fa-xmark"></i></button>
                 </div>
               </div>
               <div class="tab-content active" data-tab-content="jd-text">
                 <div class="textarea-wrapper">
-                  <textarea class="input-textarea" id="jdTextarea" placeholder="Paste the full job description here..." rows="8" maxlength="5000"></textarea>
+                  <textarea class="input-textarea" id="jdTextarea" placeholder="Paste the full job description here..."
+                    rows="8" maxlength="5000"></textarea>
                   <div class="char-counter"><span id="jdCharCount">0</span> / 5000</div>
                 </div>
               </div>
@@ -242,7 +265,8 @@
         </div>
 
         <button class="btn btn-primary btn-full btn-analyze" id="analyzeBtn" disabled>
-          <span class="btn-text"><i class="fas fa-play"></i> <span id="analyzeBtnText">Run Core Match Analysis</span></span>
+          <span class="btn-text"><i class="fas fa-play"></i> <span id="analyzeBtnText">Run Core Match
+              Analysis</span></span>
           <span class="btn-loader" hidden>
             <i class="fas fa-circle-notch fa-spin"></i> Analyzing...
           </span>
@@ -279,10 +303,13 @@
           <div class="results-header">
             <h2><i class="fas fa-chart-bar"></i> Analysis Results</h2>
             <div class="results-actions">
-              <button class="btn btn-secondary btn-sm" id="reportBtn"><i class="fas fa-file-lines"></i> Detailed Report</button>
-              <button class="btn btn-secondary btn-sm" id="exportPdfBtn"><i class="fas fa-file-pdf"></i> Export PDF</button>
+              <button class="btn btn-secondary btn-sm" id="reportBtn"><i class="fas fa-file-lines"></i> Detailed
+                Report</button>
+              <button class="btn btn-secondary btn-sm" id="exportPdfBtn"><i class="fas fa-file-pdf"></i> Export
+                PDF</button>
               <button class="btn btn-secondary btn-sm" id="shareBtn"><i class="fas fa-share-nodes"></i> Share</button>
-              <button class="btn btn-secondary btn-sm" id="newAnalysisBtn"><i class="fas fa-rotate"></i> New Analysis</button>
+              <button class="btn btn-secondary btn-sm" id="newAnalysisBtn"><i class="fas fa-rotate"></i> New
+                Analysis</button>
             </div>
           </div>
 
@@ -295,9 +322,12 @@
                 </div>
               </div>
               <div class="score-details" id="scoreDetails">
-                <div class="score-stat"><span class="stat-label">Matched</span><span class="stat-value stat-matched" id="statMatched">0</span></div>
-                <div class="score-stat"><span class="stat-label">Missing</span><span class="stat-value stat-missing" id="statMissing">0</span></div>
-                <div class="score-stat"><span class="stat-label">Keywords</span><span class="stat-value stat-keywords" id="statKeywords">0</span></div>
+                <div class="score-stat"><span class="stat-label">Matched</span><span class="stat-value stat-matched"
+                    id="statMatched">0</span></div>
+                <div class="score-stat"><span class="stat-label">Missing</span><span class="stat-value stat-missing"
+                    id="statMissing">0</span></div>
+                <div class="score-stat"><span class="stat-label">Keywords</span><span class="stat-value stat-keywords"
+                    id="statKeywords">0</span></div>
               </div>
             </div>
 
@@ -312,11 +342,13 @@
               <h4 class="result-card-title"><i class="fas fa-tags"></i> Keyword Analysis</h4>
               <div class="keywords-grid">
                 <div class="keyword-group">
-                  <h5><span class="kw-dot matched"></span> Matched <span class="kw-count" id="matchedCount">0</span></h5>
+                  <h5><span class="kw-dot matched"></span> Matched <span class="kw-count" id="matchedCount">0</span>
+                  </h5>
                   <div class="tags-container" id="matchedTags"></div>
                 </div>
                 <div class="keyword-group">
-                  <h5><span class="kw-dot missing"></span> Missing <span class="kw-count" id="missingCount">0</span></h5>
+                  <h5><span class="kw-dot missing"></span> Missing <span class="kw-count" id="missingCount">0</span>
+                  </h5>
                   <div class="tags-container" id="missingTags"></div>
                 </div>
               </div>
@@ -335,7 +367,8 @@
       <section id="page-report" class="page">
         <div class="page-header">
           <h1 class="page-title"><i class="fas fa-file-lines"></i> Detailed Report</h1>
-          <button class="btn btn-secondary btn-sm" id="backToDashboard"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
+          <button class="btn btn-secondary btn-sm" id="backToDashboard"><i class="fas fa-arrow-left"></i> Back to
+            Dashboard</button>
         </div>
 
         <div class="report-tabs" id="reportTabs">
@@ -366,14 +399,16 @@
             <h1 class="page-title"><i class="fas fa-clock-rotate"></i> Analysis History</h1>
             <p class="page-subtitle">View your past CV analyses</p>
           </div>
-          <button class="btn btn-secondary btn-sm" id="clearHistoryBtn"><i class="fas fa-trash-can"></i> Clear History</button>
+          <button class="btn btn-secondary btn-sm" id="clearHistoryBtn"><i class="fas fa-trash-can"></i> Clear
+            History</button>
         </div>
 
         <div class="card">
           <div class="history-toolbar" id="historyToolbar" hidden>
             <div class="history-search">
               <i class="fas fa-magnifying-glass"></i>
-              <input type="search" id="historySearch" class="input-text" placeholder="Search by CV name, mode or date..." aria-label="Search history">
+              <input type="search" id="historySearch" class="input-text"
+                placeholder="Search by CV name, mode or date..." aria-label="Search history">
             </div>
             <span class="history-count" id="historyCount"></span>
           </div>
@@ -422,8 +457,10 @@
             </div>
             <div class="card-body">
               <label class="field-label" for="profileLinkedin">Profile URL</label>
-              <input type="url" id="profileLinkedin" class="input-text" placeholder="https://www.linkedin.com/in/username">
-              <p class="field-hint">Used as the default CV source on the analysis page when no file or link is provided.</p>
+              <input type="url" id="profileLinkedin" class="input-text"
+                placeholder="https://www.linkedin.com/in/username">
+              <p class="field-hint">Used as the default CV source on the analysis page when no file or link is provided.
+              </p>
             </div>
           </div>
 
@@ -442,7 +479,8 @@
 
         <div class="card">
           <div class="card-body save-row">
-            <p><i class="fas fa-circle-info"></i> Saved links act as defaults on the CV Analysis page when no CV is provided.</p>
+            <p><i class="fas fa-circle-info"></i> Saved links act as defaults on the CV Analysis page when no CV is
+              provided.</p>
             <button class="btn btn-primary" id="saveProfileBtn"><i class="fas fa-floppy-disk"></i> Save Profile</button>
           </div>
         </div>
@@ -477,7 +515,8 @@
             <div class="popular-badge">Most Popular</div>
             <div class="pricing-header">
               <h3 class="pricing-name">Pro</h3>
-              <p class="pricing-price"><span class="price-amount">$19</span> <span class="price-period">/month</span></p>
+              <p class="pricing-price"><span class="price-amount">$19</span> <span class="price-period">/month</span>
+              </p>
             </div>
             <ul class="pricing-features">
               <li><i class="fas fa-check"></i> Unlimited analyses</li>
@@ -494,7 +533,8 @@
           <div class="pricing-card">
             <div class="pricing-header">
               <h3 class="pricing-name">Enterprise</h3>
-              <p class="pricing-price"><span class="price-amount">$49</span> <span class="price-period">/month</span></p>
+              <p class="pricing-price"><span class="price-amount">$49</span> <span class="price-period">/month</span>
+              </p>
             </div>
             <ul class="pricing-features">
               <li><i class="fas fa-check"></i> Everything in Pro</li>
@@ -527,4 +567,5 @@
 
   <script src="script.js"></script>
 </body>
+
 </html>

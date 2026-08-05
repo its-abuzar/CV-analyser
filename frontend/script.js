@@ -684,17 +684,54 @@
 
   function runAnalysis() {
     if (state.analyzing) return;
-    const problem = analysisBlockers();
-    if (problem) {
-      showError(problem);
+
+    // Get the file, JD, and mode from state
+    const file = state.cvFile;
+    const jobDescription = state.jdText.trim();
+    const mode = state.mode;
+
+    if (!file) {
+      showError('Please upload a resume file (PDF or DOCX) before analyzing.');
       return;
     }
+    if (!jobDescription) {
+      showError('Please enter or paste a job description before analyzing.');
+      return;
+    }
+
     startAnalysisUi();
 
-    // TODO: FastAPI — replace with the fetch() request described above.
-    runSimulatedLogs(() => {
-      const data = generateMockData(state.mode);
-      finishAnalysis(data);
+    // Build FormData
+    const form = new FormData();
+    form.append('resume', file);
+    form.append('job_description', jobDescription);
+    form.append('mode', mode);
+
+    // Show simulated logs while waiting for the backend
+    runSimulatedLogs(async () => {
+      try {
+        const res = await fetch('http://127.0.0.1:8000/analyze', {
+          method: 'POST',
+          body: form
+        });
+
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          throw new Error(errBody.detail || `Server returned ${res.status}`);
+        }
+
+        const data = await res.json();
+        finishAnalysis(data);
+      } catch (err) {
+        state.analyzing = false;
+        $('analyzeBtn').querySelector('.btn-text').hidden = false;
+        $('analyzeBtn').querySelector('.btn-loader').hidden = true;
+        $('resultsSkeleton').hidden = true;
+        $('liveLogs').hidden = true;
+        updateAnalyzeBtn();
+        showError(err.message || 'Analysis failed — is the backend running?');
+        showToast('Analysis failed', 'error');
+      }
     });
   }
 

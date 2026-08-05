@@ -2,6 +2,7 @@ from fastapi import FastAPI, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import shutil
+import tempfile
 
 app = FastAPI(title="SkillMatch Pro", version="1.0.0")
 
@@ -23,9 +24,10 @@ def analyze(
     job_description: str = Form(...),
     mode: str = Form(...)
 ):
-    # Save the file (keep this)
-    os.makedirs("uploads", exist_ok=True)
-    file_path = os.path.join("uploads", resume.filename)
+    # Save the file to the system temp dir — NOT inside the project tree,
+    # otherwise dev servers that auto-reload on file changes (e.g. VS Code
+    # Live Server) reload the page the moment an upload is written to disk.
+    file_path = os.path.join(tempfile.gettempdir(), resume.filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(resume.file, buffer)
 

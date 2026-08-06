@@ -216,9 +216,7 @@ def analyze(
     job_description: str = Form(...),
     mode: str = Form(...),
 ):
-    # Save the file to the system temp dir — NOT inside the project tree,
-    # otherwise dev servers that auto-reload on file changes (e.g. VS Code
-    # Live Server) reload the page the moment an upload is written to disk.
+
     file_path = os.path.join(tempfile.gettempdir(), resume.filename)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(resume.file, buffer)

@@ -2,14 +2,14 @@
 CV ANALYZER PROJECT INSPECTOR
 ============================================================
 
-Generated: 2026-08-01 16:48:02.122836
+Generated: 2026-08-07 23:48:20.859581
 
 ============================================================
 PROJECT STATISTICS
 ============================================================
 
 Folders      : 18
-Files        : 22
+Files        : 25
 Python Files : 12
 HTML Files   : 1
 CSS Files    : 1
@@ -45,7 +45,9 @@ CV Scanner Project/
 │   ├── tests/
 │   │   └── .gitkeep
 │   ├── uploads/
-│   │   └── .gitkeep
+│   │   ├── .gitkeep
+│   │   ├── DSA notes.pdf
+│   │   └── test.pdf
 │   ├── .env
 │   └── requirements.txt
 ├── docs/
@@ -73,21 +75,24 @@ FILE SIZES
          0 bytes   backend\app\config\__init__.py
          0 bytes   backend\app\database\__init__.py
          0 bytes   backend\app\integrations\__init__.py
-         0 bytes   backend\app\main.py
+     10106 bytes   backend\app\main.py
          0 bytes   backend\app\models\__init__.py
          0 bytes   backend\app\pipeline\__init__.py
          0 bytes   backend\app\schemas\__init__.py
          0 bytes   backend\app\services\__init__.py
          0 bytes   backend\app\utils\__init__.py
-       210 bytes   backend\requirements.txt
+       247 bytes   backend\requirements.txt
          0 bytes   backend\tests\.gitkeep
          0 bytes   backend\uploads\.gitkeep
+   1088734 bytes   backend\uploads\DSA notes.pdf
+        13 bytes   backend\uploads\test.pdf
          0 bytes   docs\.gitkeep
-     28677 bytes   frontend\index.html
-     59210 bytes   frontend\script.js
+     29382 bytes   frontend\index.html
+     61498 bytes   frontend\script.js
      44062 bytes   frontend\style.css
       1091 bytes   LICENSE
       4405 bytes   project_structure.py
+         0 bytes   project_structure.txt
 
 ============================================================
 MISSING __init__.py

@@ -1,4 +1,4 @@
-from services.analysis_service import AnalysisService
+from app.services.analysis_service import AnalysisService
 service = AnalysisService()
 
 class AnalysisController:

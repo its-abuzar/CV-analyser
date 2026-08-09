@@ -7,5 +7,5 @@ controller = AnalysisController()
 
 @router.get("/analysis")
 
-def get_analysis():
-    return controller.get_analysis()
+def get_analysis(file_path: str):
+    return controller.get_analysis(file_path)

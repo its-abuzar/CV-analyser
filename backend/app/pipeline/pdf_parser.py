@@ -10,5 +10,6 @@ class PDFParser:
         """
         
         converter = DocumentConverter()
-        converted_text = converter.convert(pdf_path)
-        return converted_text
+        result = converter.convert(pdf_path)
+        markdown_text = result.document.export_to_markdown()
+        return markdown_text

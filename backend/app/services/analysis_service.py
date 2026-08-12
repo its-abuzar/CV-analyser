@@ -11,4 +11,4 @@ class AnalysisService:
         markdown_parser = MarkdownProfileParser()
         candidate = markdown_parser.parse(markdown)
         
-        return candidate.__dict__
+        return candidate

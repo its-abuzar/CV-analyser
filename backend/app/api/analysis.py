@@ -3,7 +3,7 @@ from app.controllers.analysis_controller import AnalysisController
 from app.schemas.candidate_schema import CandidateProfileResponse
 router = APIRouter()
 
-# Selecting the controller
+# Selecting the controllers
 controller = AnalysisController()
 
 @router.get("/analysis", response_model=CandidateProfileResponse)

@@ -1,571 +1,67 @@
-<!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<!doctype html>
+<html lang="en" data-density="comfortable">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Calibre — career instrumentation</title>
+    <meta
+      name="description"
+      content="Read a CV, LinkedIn profile and GitHub account against a job description, and act on what you find."
+    />
+    <meta name="theme-color" content="#0f1521" />
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SkillMatch Pro - AI-Powered CV Analyzer</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="style.css">
-</head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:ital,wght@0,400..700;1,400..600&display=swap"
+    />
 
-<body>
-  <a class="skip-link" href="#main">Skip to content</a>
-  <div class="app-container">
-    <nav class="navbar">
-      <div class="nav-inner">
-        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false"
-          aria-controls="navLinks">
-          <i class="fas fa-bars"></i>
-        </button>
-        <a href="#" class="nav-logo" data-page="home" aria-label="SkillMatch Pro home">
-          <i class="fas fa-brain"></i>
-          <span class="logo-text">SkillMatch<span class="logo-accent">Pro</span></span>
-        </a>
-        <nav class="nav-links" id="navLinks" aria-label="Main navigation">
-          <a href="#" class="nav-link active" data-page="home"><i class="fas fa-home"></i> Home</a>
-          <a href="#" class="nav-link" data-page="dashboard"><i class="fas fa-chart-bar"></i> Dashboard</a>
-          <a href="#" class="nav-link" data-page="history"><i class="fas fa-clock-rotate"></i> History</a>
-          <a href="#" class="nav-link" data-page="profile"><i class="fas fa-user"></i> Profile</a>
-          <a href="#" class="nav-link" data-page="pricing"><i class="fas fa-tag"></i> Pricing</a>
-        </nav>
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-          <i class="fas fa-moon"></i>
-          <i class="fas fa-sun"></i>
-        </button>
-      </div>
-    </nav>
+    <link rel="stylesheet" href="./styles/tokens.css" />
+    <link rel="stylesheet" href="./styles/base.css" />
+    <link rel="stylesheet" href="./styles/components.css" />
+    <link rel="stylesheet" href="./styles/shell.css" />
+    <link rel="stylesheet" href="./styles/pages.css" />
 
-    <main id="main">
-      <!-- ========== HOME PAGE ========== -->
-      <section id="page-home" class="page active">
-        <div class="hero">
-          <div class="hero-badge"><i class="fas fa-sparkles"></i> AI-Powered Analysis</div>
-          <h1 class="hero-title">Match Smarter.<br>Not Harder.</h1>
-          <p class="hero-subtitle">Upload your CV, paste a job description, and let AI find the perfect fit across 40+
-            dimensions.</p>
-          <div class="hero-actions">
-            <a href="#" class="btn btn-primary btn-lg" data-page="dashboard"><i class="fas fa-rocket"></i> Start
-              Analyzing</a>
-            <a href="#" class="btn btn-secondary btn-lg" data-page="pricing">See Pricing <i
-                class="fas fa-arrow-right"></i></a>
-          </div>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f1521'/%3E%3Cpath d='M6 20h20M10 20v-5M16 20v-9M22 20v-6' stroke='%23e0b65a' stroke-width='2.25' stroke-linecap='square'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">Skip to content</a>
+
+    <div id="app">
+      <!-- Shell is rendered by src/shell/layout.js; this is the pre-boot state. -->
+      <div class="boot" role="status" aria-live="polite">
+        <div class="boot__mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="28" height="28">
+            <path
+              d="M4 22h24M9 22v-6M16 22v-11M23 22v-8"
+              stroke="currentColor"
+              stroke-width="2.25"
+              stroke-linecap="square"
+              fill="none"
+            />
+          </svg>
         </div>
-
-        <div class="features-section">
-          <h2 class="section-title">7 Analysis Modes</h2>
-          <p class="section-subtitle">Comprehensive insights from every angle of your resume</p>
-          <div class="features-grid" id="homeFeatureGrid"></div>
-        </div>
-
-        <footer class="footer">
-          <div class="footer-inner">
-            <div class="footer-brand">
-              <i class="fas fa-brain"></i>
-              <span>SkillMatch Pro</span>
-            </div>
-            <div class="footer-links">
-              <a href="#" data-page="home">Home</a>
-              <a href="#" data-page="dashboard">Dashboard</a>
-              <a href="#" data-page="history">History</a>
-              <a href="#" data-page="profile">Profile</a>
-              <a href="#" data-page="pricing">Pricing</a>
-            </div>
-            <p class="footer-copy">&copy; 2026 SkillMatch Pro. All rights reserved.</p>
-          </div>
-        </footer>
-      </section>
-
-      <!-- ========== DASHBOARD PAGE ========== -->
-      <section id="page-dashboard" class="page">
-        <div class="page-header">
-          <h1 class="page-title">CV Analysis</h1>
-          <p class="page-subtitle">Upload your CV and job description to get started</p>
-        </div>
-
-        <div class="input-grid">
-          <div class="card">
-            <div class="card-header">
-              <h3><i class="fas fa-file-arrow-up"></i> Upload CV</h3>
-              <div class="tab-bar" id="cvTabs">
-                <button class="tab active" data-tab="cv-upload"><i class="fas fa-upload"></i> Upload</button>
-                <button class="tab" data-tab="cv-linkedin"><i class="fab fa-linkedin"></i> LinkedIn</button>
-                <button class="tab" data-tab="cv-github"><i class="fab fa-github"></i> GitHub</button>
-                <button class="tab" data-tab="cv-text"><i class="fas fa-pen"></i> Text</button>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="tab-content active" data-tab-content="cv-upload">
-                <div class="upload-area" id="uploadArea" role="button" tabindex="0" aria-label="Upload CV file">
-                  <input type="file" id="cvFileInput" accept=".pdf,.docx" hidden>
-                  <div class="upload-content" id="uploadContent">
-                    <i class="fas fa-cloud-arrow-up upload-icon"></i>
-                    <p class="upload-text">Drag & drop your CV here</p>
-                    <p class="upload-hint">Supports PDF, DOCX &mdash; Max 10MB</p>
-                  </div>
-                  <div class="file-info" id="fileInfo" hidden>
-                    <div class="file-details">
-                      <i class="fas fa-file-lines file-type-icon"></i>
-                      <span class="file-name" id="fileName">resume.pdf</span>
-                    </div>
-                    <button class="btn-icon btn-danger-icon" id="removeFileBtn" aria-label="Remove file">
-                      <i class="fas fa-xmark"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="tab-content" data-tab-content="cv-linkedin">
-                <div class="sub-tabs">
-                  <div class="sub-tab-bar">
-                    <button class="sub-tab active" data-sub="connect"><i class="fas fa-link"></i> Connect</button>
-                    <button class="sub-tab" data-sub="link"><i class="fas fa-paste"></i> Paste Link</button>
-                  </div>
-                  <div class="sub-panel active" data-sub-panel="connect">
-                    <div class="connect-box">
-                      <i class="fab fa-linkedin connect-icon"></i>
-                      <p class="connect-text">Connect your LinkedIn profile to import your CV automatically.</p>
-                      <button class="btn btn-secondary" data-connect="linkedin"><i class="fab fa-linkedin"></i> Connect
-                        LinkedIn</button>
-                    </div>
-                  </div>
-                  <div class="sub-panel" data-sub-panel="link">
-                    <div class="link-input-row">
-                      <i class="fab fa-linkedin"></i>
-                      <input type="url" class="input-text" placeholder="Paste your LinkedIn profile URL..."
-                        data-url-input="cv-linkedin">
-                      <button class="btn btn-primary" data-import-btn="cv-linkedin"><i class="fas fa-arrow-down"></i>
-                        Import</button>
-                    </div>
-                    <div class="profile-hint" data-profile-hint="linkedin" hidden>
-                      <i class="fas fa-user"></i>
-                      <a data-profile-link href="#" target="_blank" rel="noopener"></a>
-                      <button class="btn btn-secondary btn-sm" data-use-profile="linkedin"><i
-                          class="fas fa-rotate-left"></i> Use default</button>
-                    </div>
-                  </div>
-                  <div class="imported-state" data-imported-state="cv-linkedin" hidden>
-                    <i class="fas fa-check-circle"></i>
-                    <span data-imported-label></span>
-                    <button class="btn-icon btn-danger-icon" data-remove-import="cv-linkedin"
-                      aria-label="Remove imported link"><i class="fas fa-xmark"></i></button>
-                  </div>
-                </div>
-              </div>
-              <div class="tab-content" data-tab-content="cv-github">
-                <div class="sub-tabs">
-                  <div class="sub-tab-bar">
-                    <button class="sub-tab active" data-sub="connect"><i class="fas fa-link"></i> Connect</button>
-                    <button class="sub-tab" data-sub="link"><i class="fas fa-paste"></i> Paste Link</button>
-                  </div>
-                  <div class="sub-panel active" data-sub-panel="connect">
-                    <div class="connect-box">
-                      <i class="fab fa-github connect-icon"></i>
-                      <p class="connect-text">Connect your GitHub to analyze your repositories and projects.</p>
-                      <button class="btn btn-secondary" data-connect="github"><i class="fab fa-github"></i> Connect
-                        GitHub</button>
-                    </div>
-                  </div>
-                  <div class="sub-panel" data-sub-panel="link">
-                    <div class="link-input-row">
-                      <i class="fab fa-github"></i>
-                      <input type="url" class="input-text" placeholder="Paste your GitHub profile URL..."
-                        data-url-input="cv-github">
-                      <button class="btn btn-primary" data-import-btn="cv-github"><i class="fas fa-arrow-down"></i>
-                        Import</button>
-                    </div>
-                    <div class="profile-hint" data-profile-hint="github" hidden>
-                      <i class="fas fa-user"></i>
-                      <a data-profile-link href="#" target="_blank" rel="noopener"></a>
-                      <button class="btn btn-secondary btn-sm" data-use-profile="github"><i
-                          class="fas fa-rotate-left"></i> Use default</button>
-                    </div>
-                  </div>
-                  <div class="imported-state" data-imported-state="cv-github" hidden>
-                    <i class="fas fa-check-circle"></i>
-                    <span data-imported-label></span>
-                    <button class="btn-icon btn-danger-icon" data-remove-import="cv-github"
-                      aria-label="Remove imported link"><i class="fas fa-xmark"></i></button>
-                  </div>
-                </div>
-              </div>
-              <div class="tab-content" data-tab-content="cv-text">
-                <div class="textarea-wrapper">
-                  <label class="sr-only" for="cvTextarea">CV text</label>
-                  <textarea class="input-textarea" id="cvTextarea" placeholder="Paste your CV text here..." rows="6"
-                    maxlength="10000"></textarea>
-                  <div class="char-counter"><span id="cvCharCount">0</span> / 10000</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h3><i class="fas fa-briefcase"></i> Job Description</h3>
-              <div class="tab-bar" id="jdTabs">
-                <button class="tab" data-tab="jd-upload"><i class="fas fa-upload"></i> Upload</button>
-                <button class="tab" data-tab="jd-linkedin"><i class="fab fa-linkedin"></i> LinkedIn</button>
-                <button class="tab active" data-tab="jd-text"><i class="fas fa-pen"></i> Text</button>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="tab-content" data-tab-content="jd-upload">
-                <div class="upload-area upload-area-sm" id="jdUploadArea" role="button" tabindex="0"
-                  aria-label="Upload job description file">
-                  <input type="file" id="jdFileInput" accept=".pdf,.docx,.txt" hidden>
-                  <div class="upload-content" id="jdUploadContent">
-                    <i class="fas fa-cloud-arrow-up upload-icon upload-icon-sm"></i>
-                    <p class="upload-text upload-text-sm">Upload JD file</p>
-                    <p class="upload-hint">PDF, DOCX or TXT &mdash; Max 10MB</p>
-                  </div>
-                  <div class="file-info" id="jdFileInfo" hidden>
-                    <div class="file-details">
-                      <i class="fas fa-file-lines file-type-icon"></i>
-                      <span class="file-name" id="jdFileName"></span>
-                    </div>
-                    <button class="btn-icon btn-danger-icon" id="removeJdFileBtn" aria-label="Remove JD file">
-                      <i class="fas fa-xmark"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="tab-content" data-tab-content="jd-linkedin">
-                <div class="link-input-row">
-                  <i class="fab fa-linkedin"></i>
-                  <input type="url" class="input-text" placeholder="Paste the LinkedIn job posting URL..."
-                    data-url-input="jd-linkedin">
-                  <button class="btn btn-primary" data-import-btn="jd-linkedin"><i class="fas fa-arrow-down"></i> Import
-                    Job</button>
-                </div>
-                <p class="field-hint"><i class="fas fa-circle-info"></i> Paste the link to any LinkedIn job posting to
-                  import the full description for analysis.</p>
-                <div class="imported-state" id="jdImportedState" data-imported-state="jd-linkedin" hidden>
-                  <i class="fas fa-check-circle"></i>
-                  <span data-imported-label>LinkedIn posting imported</span>
-                  <button class="btn-icon btn-danger-icon" data-remove-import="jd-linkedin"
-                    aria-label="Remove imported job"><i class="fas fa-xmark"></i></button>
-                </div>
-              </div>
-              <div class="tab-content active" data-tab-content="jd-text">
-                <div class="textarea-wrapper">
-                  <textarea class="input-textarea" id="jdTextarea" placeholder="Paste the full job description here..."
-                    rows="8" maxlength="5000"></textarea>
-                  <div class="char-counter"><span id="jdCharCount">0</span> / 5000</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card mode-selector-card">
-          <div class="card-header">
-            <h3><i class="fas fa-sliders"></i> Analysis Mode</h3>
-          </div>
-          <div class="mode-grid" id="modeGrid"></div>
-        </div>
-
-        <button class="btn btn-primary btn-full btn-analyze" id="analyzeBtn" disabled>
-          <span class="btn-text"><i class="fas fa-play"></i> <span id="analyzeBtnText">Run Core Match
-              Analysis</span></span>
-          <span class="btn-loader" hidden>
-            <i class="fas fa-circle-notch fa-spin"></i> Analyzing...
-          </span>
-        </button>
-
-        <div class="live-logs is-running" id="liveLogs" hidden>
-          <div class="logs-header">
-            <i class="fas fa-terminal"></i> Live Logs
-            <span class="logs-status is-running" id="logsStatus" role="status">
-              <i class="fas fa-circle"></i> Running
-            </span>
-          </div>
-          <div class="logs-body" id="logsBody" role="log" aria-live="polite" aria-label="Analysis progress logs"></div>
-        </div>
-
-        <div class="results-skeleton" id="resultsSkeleton" hidden aria-hidden="true">
-          <div class="skeleton-card">
-            <div class="skeleton skeleton-circle"></div>
-            <div class="skeleton skeleton-line w-60 skeleton-gap"></div>
-            <div class="skeleton skeleton-line w-80"></div>
-            <div class="skeleton skeleton-line w-40"></div>
-          </div>
-          <div class="skeleton-card">
-            <div class="skeleton skeleton-line w-40"></div>
-            <div class="skeleton skeleton-bar"></div>
-            <div class="skeleton skeleton-line w-60"></div>
-            <div class="skeleton skeleton-bar"></div>
-            <div class="skeleton skeleton-line w-50"></div>
-            <div class="skeleton skeleton-bar"></div>
-          </div>
-        </div>
-
-        <div class="results-section" id="resultsSection" hidden>
-          <div class="results-header">
-            <h2><i class="fas fa-chart-bar"></i> Analysis Results</h2>
-            <div class="results-actions">
-              <button class="btn btn-secondary btn-sm" id="reportBtn"><i class="fas fa-file-lines"></i> Detailed
-                Report</button>
-              <button class="btn btn-secondary btn-sm" id="exportPdfBtn"><i class="fas fa-file-pdf"></i> Export
-                PDF</button>
-              <button class="btn btn-secondary btn-sm" id="shareBtn"><i class="fas fa-share-nodes"></i> Share</button>
-              <button class="btn btn-secondary btn-sm" id="newAnalysisBtn"><i class="fas fa-rotate"></i> New
-                Analysis</button>
-            </div>
-          </div>
-
-          <div class="results-grid">
-            <div class="result-card score-card">
-              <div class="score-circle-wrapper">
-                <div class="score-circle" id="scoreCircle">
-                  <span class="score-value"><span id="scoreNumber">0</span><span class="score-pct">%</span></span>
-                  <span class="score-label">Match Score</span>
-                </div>
-              </div>
-              <div class="score-details" id="scoreDetails">
-                <div class="score-stat"><span class="stat-label">Matched</span><span class="stat-value stat-matched"
-                    id="statMatched">0</span></div>
-                <div class="score-stat"><span class="stat-label">Missing</span><span class="stat-value stat-missing"
-                    id="statMissing">0</span></div>
-                <div class="score-stat"><span class="stat-label">Keywords</span><span class="stat-value stat-keywords"
-                    id="statKeywords">0</span></div>
-              </div>
-            </div>
-
-            <div class="result-card" id="skillBreakdownCard">
-              <h4 class="result-card-title"><i class="fas fa-bars-progress"></i> Skill Breakdown</h4>
-              <div class="skill-bars" id="skillBars"></div>
-            </div>
-
-            <div class="mode-cards-grid" id="modeSpecificCards"></div>
-
-            <div class="result-card keywords-card">
-              <h4 class="result-card-title"><i class="fas fa-tags"></i> Keyword Analysis</h4>
-              <div class="keywords-grid">
-                <div class="keyword-group">
-                  <h5><span class="kw-dot matched"></span> Matched <span class="kw-count" id="matchedCount">0</span>
-                  </h5>
-                  <div class="tags-container" id="matchedTags"></div>
-                </div>
-                <div class="keyword-group">
-                  <h5><span class="kw-dot missing"></span> Missing <span class="kw-count" id="missingCount">0</span>
-                  </h5>
-                  <div class="tags-container" id="missingTags"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="error-toast" id="errorToast" role="alert" hidden>
-          <i class="fas fa-circle-exclamation"></i>
-          <span id="errorMessage">Error message here</span>
-          <button class="btn-icon" id="dismissError"><i class="fas fa-xmark"></i></button>
-        </div>
-      </section>
-
-      <!-- ========== REPORT PAGE ========== -->
-      <section id="page-report" class="page">
-        <div class="page-header">
-          <h1 class="page-title"><i class="fas fa-file-lines"></i> Detailed Report</h1>
-          <button class="btn btn-secondary btn-sm" id="backToDashboard"><i class="fas fa-arrow-left"></i> Back to
-            Dashboard</button>
-        </div>
-
-        <div class="report-tabs" id="reportTabs">
-          <button class="report-tab active" data-report-tab="overview"><i class="fas fa-gauge"></i> Overview</button>
-          <button class="report-tab" data-report-tab="techstack"><i class="fas fa-code"></i> Tech Stack</button>
-          <button class="report-tab" data-report-tab="experience"><i class="fas fa-briefcase"></i> Experience</button>
-          <button class="report-tab" data-report-tab="achievements"><i class="fas fa-trophy"></i> Achievements</button>
-          <button class="report-tab" data-report-tab="structure"><i class="fas fa-file-lines"></i> Structure</button>
-          <button class="report-tab" data-report-tab="interview"><i class="fas fa-question"></i> Interview</button>
-          <button class="report-tab" data-report-tab="salary"><i class="fas fa-dollar-sign"></i> Salary</button>
-        </div>
-
-        <div class="report-content">
-          <div class="report-panel active" data-report-panel="overview" id="reportOverview"></div>
-          <div class="report-panel" data-report-panel="techstack" id="reportTechStack"></div>
-          <div class="report-panel" data-report-panel="experience" id="reportExperience"></div>
-          <div class="report-panel" data-report-panel="achievements" id="reportAchievements"></div>
-          <div class="report-panel" data-report-panel="structure" id="reportStructure"></div>
-          <div class="report-panel" data-report-panel="interview" id="reportInterview"></div>
-          <div class="report-panel" data-report-panel="salary" id="reportSalary"></div>
-        </div>
-      </section>
-
-      <!-- ========== HISTORY PAGE ========== -->
-      <section id="page-history" class="page">
-        <div class="page-header">
-          <div>
-            <h1 class="page-title"><i class="fas fa-clock-rotate"></i> Analysis History</h1>
-            <p class="page-subtitle">View your past CV analyses</p>
-          </div>
-          <button class="btn btn-secondary btn-sm" id="clearHistoryBtn"><i class="fas fa-trash-can"></i> Clear
-            History</button>
-        </div>
-
-        <div class="card">
-          <div class="history-toolbar" id="historyToolbar" hidden>
-            <div class="history-search">
-              <i class="fas fa-magnifying-glass"></i>
-              <input type="search" id="historySearch" class="input-text"
-                placeholder="Search by CV name, mode or date..." aria-label="Search history">
-            </div>
-            <span class="history-count" id="historyCount"></span>
-          </div>
-          <div class="history-empty" id="historyEmpty">
-            <i class="fas fa-clock-rotate"></i>
-            <h3>No analyses yet</h3>
-            <p>Run your first CV analysis to see it here.</p>
-            <a href="#" class="btn btn-primary" data-page="dashboard"><i class="fas fa-rocket"></i> Start Analyzing</a>
-          </div>
-          <div class="history-empty" id="historyNoMatch" hidden>
-            <i class="fas fa-magnifying-glass"></i>
-            <h3>No matching analyses</h3>
-            <p>Try a different search term.</p>
-          </div>
-          <div class="history-table-wrap" id="historyTableWrap" hidden>
-            <table class="history-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>CV Name</th>
-                  <th>Mode</th>
-                  <th>Score</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="historyBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <!-- ========== PROFILE PAGE ========== -->
-      <section id="page-profile" class="page">
-        <div class="page-header">
-          <div>
-            <h1 class="page-title"><i class="fas fa-user"></i> Profile</h1>
-            <p class="page-subtitle">Save your professional profile links to use as default CV sources</p>
-          </div>
-        </div>
-
-        <div class="profile-grid">
-          <div class="card">
-            <div class="card-header">
-              <h3><i class="fab fa-linkedin"></i> LinkedIn</h3>
-              <span class="status-badge not-connected" id="linkedinStatus">Not connected</span>
-            </div>
-            <div class="card-body">
-              <label class="field-label" for="profileLinkedin">Profile URL</label>
-              <input type="url" id="profileLinkedin" class="input-text"
-                placeholder="https://www.linkedin.com/in/username">
-              <p class="field-hint">Used as the default CV source on the analysis page when no file or link is provided.
-              </p>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header">
-              <h3><i class="fab fa-github"></i> GitHub</h3>
-              <span class="status-badge not-connected" id="githubStatus">Not connected</span>
-            </div>
-            <div class="card-body">
-              <label class="field-label" for="profileGithub">Profile URL</label>
-              <input type="url" id="profileGithub" class="input-text" placeholder="https://github.com/username">
-              <p class="field-hint">Used to pull your projects when no file or link is provided.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-body save-row">
-            <p><i class="fas fa-circle-info"></i> Saved links act as defaults on the CV Analysis page when no CV is
-              provided.</p>
-            <button class="btn btn-primary" id="saveProfileBtn"><i class="fas fa-floppy-disk"></i> Save Profile</button>
-          </div>
-        </div>
-      </section>
-
-      <!-- ========== PRICING PAGE ========== -->
-      <section id="page-pricing" class="page">
-        <div class="page-header text-center">
-          <h1 class="page-title">Simple, Transparent Pricing</h1>
-          <p class="page-subtitle">Choose the plan that fits your needs</p>
-        </div>
-
-        <div class="pricing-grid">
-          <div class="pricing-card">
-            <div class="pricing-header">
-              <h3 class="pricing-name">Free</h3>
-              <p class="pricing-price"><span class="price-amount">$0</span> <span class="price-period">/month</span></p>
-            </div>
-            <ul class="pricing-features">
-              <li><i class="fas fa-check"></i> 3 analyses per month</li>
-              <li><i class="fas fa-check"></i> Core Match mode</li>
-              <li><i class="fas fa-check"></i> Basic keyword matching</li>
-              <li><i class="fas fa-check"></i> Export PDF</li>
-              <li><i class="fas fa-xmark"></i> All analysis modes</li>
-              <li><i class="fas fa-xmark"></i> Detailed reports</li>
-              <li><i class="fas fa-xmark"></i> Salary Intel</li>
-            </ul>
-            <button class="btn btn-secondary btn-full pricing-cta" type="button">Get Started</button>
-          </div>
-
-          <div class="pricing-card pricing-popular">
-            <div class="popular-badge">Most Popular</div>
-            <div class="pricing-header">
-              <h3 class="pricing-name">Pro</h3>
-              <p class="pricing-price"><span class="price-amount">$19</span> <span class="price-period">/month</span>
-              </p>
-            </div>
-            <ul class="pricing-features">
-              <li><i class="fas fa-check"></i> Unlimited analyses</li>
-              <li><i class="fas fa-check"></i> All 7 analysis modes</li>
-              <li><i class="fas fa-check"></i> Advanced keyword analysis</li>
-              <li><i class="fas fa-check"></i> Export PDF & Share</li>
-              <li><i class="fas fa-check"></i> Detailed reports</li>
-              <li><i class="fas fa-check"></i> Salary Intel</li>
-              <li><i class="fas fa-check"></i> Priority support</li>
-            </ul>
-            <button class="btn btn-primary btn-full pricing-cta" type="button">Start Free Trial</button>
-          </div>
-
-          <div class="pricing-card">
-            <div class="pricing-header">
-              <h3 class="pricing-name">Enterprise</h3>
-              <p class="pricing-price"><span class="price-amount">$49</span> <span class="price-period">/month</span>
-              </p>
-            </div>
-            <ul class="pricing-features">
-              <li><i class="fas fa-check"></i> Everything in Pro</li>
-              <li><i class="fas fa-check"></i> Team accounts (up to 10)</li>
-              <li><i class="fas fa-check"></i> Bulk analysis</li>
-              <li><i class="fas fa-check"></i> API access</li>
-              <li><i class="fas fa-check"></i> Custom branding</li>
-              <li><i class="fas fa-check"></i> Dedicated support</li>
-              <li><i class="fas fa-check"></i> SSO & Security</li>
-            </ul>
-            <button class="btn btn-secondary btn-full pricing-cta" type="button">Contact Sales</button>
-          </div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <div id="toast-container" role="status" aria-live="polite"></div>
-
-  <div class="modal-overlay" id="confirmModal" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-      <h3 class="modal-title" id="confirmTitle">Are you sure?</h3>
-      <p class="modal-message" id="confirmMessage"></p>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" id="confirmCancel" type="button">Cancel</button>
-        <button class="btn btn-danger" id="confirmOk" type="button">Confirm</button>
+        <p class="boot__text">Starting Calibre</p>
       </div>
     </div>
-  </div>
 
-  <script src="script.js"></script>
-</body>
+    <div id="overlay-root"></div>
+    <div id="toast-root" class="toast-root" role="region" aria-label="Notifications"></div>
 
+    <noscript>
+      <div class="noscript">
+        <h1>Calibre needs JavaScript</h1>
+        <p>
+          This is a client-rendered interface. Enable JavaScript to load the workspace, or
+          use the API directly at <code>/api/v1</code>.
+        </p>
+      </div>
+    </noscript>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
 </html>

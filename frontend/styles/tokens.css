@@ -1,0 +1,183 @@
+/* ==========================================================================
+   CALIBRE — design tokens
+   Direction: a precision instrument for careers.
+   Ink chassis, cool paper workspace, brass used sparingly as the one accent.
+   Every colour and size in the app resolves to a token declared here.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* ---- Chassis: dark structural surfaces (rail, specimen bar, readouts) --- */
+  --ink-900: #0f1521;
+  --ink-850: #131a28;
+  --ink-800: #18202f;
+  --ink-750: #1e2739;
+  --ink-700: #26314a;
+  --ink-600: #3a4763;
+  --ink-500: #55648a;
+
+  /* ---- Paper: the workspace ---------------------------------------------- */
+  --paper: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #fafbfc;
+  --surface-3: #f0f3f6;
+  --surface-inset: #f7f9fb;
+
+  /* ---- Rules: hairlines do the structural work, not shadows -------------- */
+  --rule: #e3e7ed;
+  --rule-firm: #cdd4de;
+  --rule-strong: #b3bdcb;
+  --rule-dark: #26314a;
+  --rule-dark-soft: #1e2739;
+
+  /* ---- Text -------------------------------------------------------------- */
+  --text: #111826;
+  --text-2: #4b586c;
+  --text-3: #67738a;          /* 4.78:1 on white — AA for body text */
+  --text-on-ink: #eef1f6;
+  --text-on-ink-2: #a9b4c7;
+  --text-on-ink-3: #79859b;
+
+  /* ---- Brass: the single accent ------------------------------------------ */
+  --brass: #9a6f14;           /* 4.51:1 on white — UI, borders, large text */
+  --brass-ink: #8a6212;       /* 5.48:1 on white — body-size text and links */
+  --brass-600: #b0801a;
+  --brass-400: #d3a53f;
+  --brass-300: #e0b65a;       /* brass on dark chassis */
+  --brass-wash: #fbf3df;
+  --brass-wash-2: #f5e9cd;
+  --brass-line: #dcc48a;
+
+  /* ---- Diagnostic scale: used consistently for every reading ------------- */
+  --fault: #a62b22;
+  --fault-600: #c03a30;
+  --fault-wash: #fbedeb;
+  --fault-line: #edc4c0;
+
+  --caution: #8a6410;
+  --caution-600: #a97d1c;
+  --caution-wash: #fbf3e2;
+  --caution-line: #e6d3a8;
+
+  --pass: #17654a;
+  --pass-600: #1e7d5c;
+  --pass-wash: #e9f4ef;
+  --pass-line: #b8ddcd;
+
+  --info: #1f4e82;
+  --info-600: #2a63a2;
+  --info-wash: #eaf1f9;
+  --info-line: #c2d5ea;
+
+  --neutral-wash: #f0f3f6;
+  --neutral-line: #dbe1e9;
+
+  /* ---- Data visualisation ramp ------------------------------------------- */
+  --viz-1: #1f4e82;
+  --viz-2: #9a6f14;
+  --viz-3: #17654a;
+  --viz-4: #5e4b8b;
+  --viz-5: #a62b22;
+  --viz-6: #2f7a86;
+  --viz-7: #8a5a3c;
+  --viz-8: #4b586c;
+
+  /* ---- Type -------------------------------------------------------------- */
+  --font-display: 'Archivo', 'Archivo Expanded', ui-sans-serif, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-body: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas,
+    monospace;
+
+  --fs-11: 0.6875rem;
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-15: 0.9375rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-20: 1.25rem;
+  --fs-24: 1.5rem;
+  --fs-26: 1.625rem;
+  --fs-32: 2rem;
+  --fs-36: 2.25rem;
+  --fs-44: 2.75rem;
+  --fs-52: 3.25rem;
+
+  --lh-tight: 1.12;
+  --lh-snug: 1.28;
+  --lh-normal: 1.5;
+  --lh-loose: 1.65;
+
+  --tracking-display: -0.022em;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-label: 0.09em;
+  --tracking-wide: 0.14em;
+
+  /* ---- Space: 4px base --------------------------------------------------- */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.25rem;
+  --s-6: 1.5rem;
+  --s-7: 1.75rem;
+  --s-8: 2rem;
+  --s-10: 2.5rem;
+  --s-12: 3rem;
+  --s-16: 4rem;
+  --s-20: 5rem;
+
+  /* ---- Radius: restrained ------------------------------------------------ */
+  --r-xs: 3px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --r-pill: 999px;
+
+  /* ---- Elevation: one shadow, for overlays only -------------------------- */
+  --shadow-overlay: 0 1px 2px rgba(15, 21, 33, 0.06),
+    0 12px 32px -8px rgba(15, 21, 33, 0.22);
+  --shadow-raise: 0 1px 2px rgba(15, 21, 33, 0.05),
+    0 4px 12px -6px rgba(15, 21, 33, 0.14);
+
+  /* ---- Layout ------------------------------------------------------------ */
+  --rail-w: 264px;
+  --rail-w-collapsed: 60px;
+  --bar-h: 56px;
+  --workspace-max: 1440px;
+
+  /* ---- Motion ------------------------------------------------------------ */
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --t-fast: 120ms;
+  --t-med: 200ms;
+  --t-slow: 320ms;
+  --t-settle: 720ms;
+
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--brass-600);
+  --focus-ring-dark: 0 0 0 2px var(--ink-900), 0 0 0 4px var(--brass-300);
+}
+
+/* Density preference — set on <html> from Settings. Compact suits the
+   data-dense screens (tracker, matrix, findings lists). */
+html[data-density='compact'] {
+  --s-4: 0.75rem;
+  --s-5: 1rem;
+  --s-6: 1.125rem;
+  --s-8: 1.5rem;
+  --s-10: 1.875rem;
+}
+
+/* Honour the OS setting. Motion is decorative here — nothing depends on it. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-fast: 1ms;
+    --t-med: 1ms;
+    --t-slow: 1ms;
+    --t-settle: 1ms;
+  }
+}

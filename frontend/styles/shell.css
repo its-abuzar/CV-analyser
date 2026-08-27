@@ -1,0 +1,737 @@
+/* ==========================================================================
+   CALIBRE — shell
+   An L-shaped ink chassis (rail + specimen bar) housing a paper workspace.
+   The specimen bar is always present because every feature operates on the
+   same pair: one candidate, one role.
+   ========================================================================== */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.shell[data-rail='collapsed'] {
+  --rail-w: 76px;
+}
+
+/* ---- Rail -------------------------------------------------------------- */
+
+.rail {
+  background: var(--ink-900);
+  border-right: 1px solid var(--ink-700);
+  color: var(--text-on-ink);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  overflow: hidden;
+}
+
+.rail__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-4);
+  height: var(--bar-h);
+  border-bottom: 1px solid var(--ink-750);
+}
+
+.rail__mark {
+  color: var(--brass-300);
+  flex: none;
+}
+
+.rail__wordmark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-stretch: 118%;
+  font-size: var(--fs-16);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.rail__tagline {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-on-ink-3);
+  margin-top: -2px;
+  white-space: nowrap;
+}
+
+.rail__collapse {
+  margin-left: auto;
+  color: var(--text-on-ink-3);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-content: center;
+  border-radius: var(--r-sm);
+  flex: none;
+}
+
+.rail__collapse:hover {
+  background: color-mix(in srgb, #fff 10%, transparent);
+  color: #fff;
+}
+
+.rail__search {
+  margin: var(--s-3) var(--s-3) var(--s-2);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0 var(--s-2) 0 var(--s-3);
+  height: 32px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--ink-700);
+  background: var(--ink-850);
+  color: var(--text-on-ink-3);
+  font-size: var(--fs-13);
+  width: calc(100% - 2 * var(--s-3));
+}
+
+.rail__search:hover {
+  border-color: var(--ink-600);
+  color: var(--text-on-ink-2);
+}
+
+.rail__search-text {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.rail__nav {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-2) var(--s-3) var(--s-4);
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-600) transparent;
+}
+
+.rail__nav::-webkit-scrollbar {
+  width: 8px;
+}
+
+.rail__nav::-webkit-scrollbar-thumb {
+  background: var(--ink-700);
+  border-radius: 4px;
+  border: 2px solid var(--ink-900);
+}
+
+/* Module group — native <details> so keyboard and screen readers work
+   without extra scripting. */
+.module {
+  border-radius: var(--r-sm);
+}
+
+.module + .module {
+  margin-top: 2px;
+}
+
+.module__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-2);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  list-style: none;
+  color: var(--text-on-ink-2);
+}
+
+.module__summary::-webkit-details-marker {
+  display: none;
+}
+
+.module__summary:hover {
+  background: color-mix(in srgb, #fff 6%, transparent);
+  color: #fff;
+}
+
+.module__chevron {
+  color: var(--text-on-ink-3);
+  transition: transform var(--t-fast) var(--ease-out);
+  flex: none;
+}
+
+.module[open] > .module__summary .module__chevron {
+  transform: rotate(90deg);
+}
+
+.module__index {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  color: var(--brass-300);
+  flex: none;
+  width: 16px;
+  text-align: center;
+}
+
+.module__name {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.module__count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-on-ink-3);
+  flex: none;
+}
+
+.module__items {
+  display: grid;
+  padding: 2px 0 var(--s-2) 0;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3);
+  margin-left: var(--s-3);
+  border-left: 1px solid var(--ink-700);
+  color: var(--text-on-ink-2);
+  font-size: var(--fs-13);
+  text-decoration: none;
+  line-height: var(--lh-snug);
+  transition: color var(--t-fast) var(--ease-out),
+    background var(--t-fast) var(--ease-out);
+}
+
+.nav-link:hover {
+  color: #fff;
+  background: color-mix(in srgb, #fff 6%, transparent);
+  border-left-color: var(--ink-500);
+}
+
+.nav-link[aria-current='page'] {
+  color: #fff;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--brass-300) 12%, transparent);
+  border-left-color: var(--brass-300);
+}
+
+.nav-link__text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-link__badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--brass);
+  color: #fff;
+  border-radius: var(--r-pill);
+  padding: 0 5px;
+  flex: none;
+}
+
+.rail__foot {
+  border-top: 1px solid var(--ink-750);
+  padding: var(--s-3);
+  display: grid;
+  gap: var(--s-2);
+}
+
+.rail__user {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2);
+  border-radius: var(--r-sm);
+  width: 100%;
+  text-align: left;
+  color: var(--text-on-ink);
+  text-decoration: none;
+}
+
+.rail__user:hover {
+  background: color-mix(in srgb, #fff 8%, transparent);
+}
+
+.rail__user-name {
+  font-size: var(--fs-13);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rail__user-plan {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-on-ink-3);
+}
+
+/* ========================================================================
+   COLLAPSED RAIL — icons only, perfectly centered
+   ======================================================================== */
+
+.shell[data-rail='collapsed'] .rail__wordmark,
+.shell[data-rail='collapsed'] .rail__tagline,
+.shell[data-rail='collapsed'] .rail__search-text,
+.shell[data-rail='collapsed'] .rail__search .kbd,
+.shell[data-rail='collapsed'] .module__name,
+.shell[data-rail='collapsed'] .module__count,
+.shell[data-rail='collapsed'] .module__chevron,
+.shell[data-rail='collapsed'] .nav-link__text,
+.shell[data-rail='collapsed'] .rail__user-text {
+  display: none;
+}
+
+.shell[data-rail='collapsed'] .rail__brand {
+  justify-content: center;
+  padding: var(--s-3) 0;
+  gap: var(--s-2);
+}
+
+.shell[data-rail='collapsed'] .rail__collapse {
+  margin-left: 0;
+}
+
+.shell[data-rail='collapsed'] .rail__search {
+  width: 32px;
+  height: 32px;
+  margin: var(--s-3) auto var(--s-2);
+  justify-content: center;
+  padding: 0;
+}
+
+.shell[data-rail='collapsed'] .module__summary {
+  justify-content: center;
+  padding: var(--s-2) 0;
+  gap: 0;
+}
+
+.shell[data-rail='collapsed'] .module__index {
+  width: auto;
+  font-size: var(--fs-12);
+}
+
+.shell[data-rail='collapsed'] .nav-link {
+  justify-content: center;
+  margin-left: 0;
+  border-left: none;
+  padding: var(--s-2) 0;
+  gap: 0;
+}
+
+.shell[data-rail='collapsed'] .rail__user {
+  justify-content: center;
+  padding: var(--s-2) 0;
+}
+
+.shell[data-rail='collapsed'] .rail__user .avatar {
+  margin: 0;
+}
+
+/* ---- Main column ------------------------------------------------------- */
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ========================================================================
+   SPECIMEN BAR — fully responsive top bar
+   ======================================================================== */
+
+.specimen {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: var(--bar-h);
+  background: var(--ink-900);
+  border-bottom: 1px solid var(--ink-700);
+  color: var(--text-on-ink);
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0 var(--s-4);
+  min-width: 0;
+}
+
+.specimen__menu {
+  display: none;
+  color: var(--text-on-ink-2);
+  width: 32px;
+  height: 32px;
+  place-content: center;
+  border-radius: var(--r-sm);
+  flex: none;
+}
+
+.specimen__menu:hover {
+  background: color-mix(in srgb, #fff 10%, transparent);
+  color: #fff;
+}
+
+.specimen__pair {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+/* ---- CHIPS: vertically centered text ---- */
+.spec-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 34px;
+  padding: var(--s-1) var(--s-2) var(--s-1) var(--s-3);
+  border: 1px solid var(--ink-700);
+  border-radius: var(--r-md);
+  background: var(--ink-850);
+  color: var(--text-on-ink);
+  min-width: 0;
+  max-width: 260px;
+  text-align: left;
+  flex-shrink: 1;
+}
+
+.spec-chip:hover {
+  border-color: var(--ink-500);
+  background: var(--ink-800);
+}
+
+.spec-chip--empty {
+  border-style: dashed;
+  color: var(--text-on-ink-3);
+}
+
+.spec-chip__kind {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--brass-300);
+  line-height: 1;
+  flex: none;
+}
+
+.spec-chip--empty .spec-chip__kind {
+  color: var(--text-on-ink-3);
+}
+
+/* Text wrapper — vertically centers everything inside it */
+.spec-chip__text {
+  min-width: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  gap: var(--s-1); /* <-- 4px gap between "CV" and the filename / "Role" and role name */
+}
+
+.spec-chip__name {
+  font-size: var(--fs-13);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  max-width: 100%;
+  display: block;
+  transform: translateY(0);
+}
+
+.specimen__join {
+  font-family: var(--font-mono);
+  color: var(--text-on-ink-3);
+  flex: none;
+  font-size: var(--fs-14);
+}
+
+.specimen__reading {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding-left: var(--s-3);
+  border-left: 1px solid var(--ink-750);
+  flex: none;
+}
+
+.specimen__gauge {
+  width: 132px;
+}
+
+.specimen__score {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.specimen__score-val {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: var(--fs-20);
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.specimen__score-scale {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  color: var(--text-on-ink-3);
+}
+
+.specimen__actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+}
+
+.specimen__icon-btn {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-content: center;
+  border-radius: var(--r-sm);
+  color: var(--text-on-ink-2);
+}
+
+.specimen__icon-btn:hover {
+  background: color-mix(in srgb, #fff 10%, transparent);
+  color: #fff;
+}
+
+.specimen__badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 14px;
+  height: 14px;
+  border-radius: var(--r-pill);
+  background: var(--fault-600);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  display: grid;
+  place-content: center;
+  padding: 0 3px;
+  border: 1.5px solid var(--ink-900);
+}
+
+.specimen__score-compact {
+  display: none;
+  align-items: baseline;
+  gap: 2px;
+  padding: 0 var(--s-2);
+  border-left: 1px solid var(--ink-750);
+  margin-left: auto;
+}
+
+/* ---- Workspace ------------------------------------------------------- */
+
+.workspace {
+  flex: 1;
+  padding: var(--s-6);
+  max-width: var(--workspace-max);
+  width: 100%;
+}
+
+.workspace--wide {
+  max-width: none;
+}
+
+/* ========================================================================
+   RESPONSIVE BREAKPOINTS
+   ======================================================================== */
+
+/* Hide gauge on narrower desktops */
+@media (max-width: 1240px) {
+  .specimen__gauge {
+    display: none;
+  }
+}
+
+/* Tablet — hide join symbol, compress chips */
+@media (max-width: 1023px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rail {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    width: min(300px, 86vw);
+    transform: translateX(-100%);
+    transition: transform var(--t-med) var(--ease-out);
+    box-shadow: var(--shadow-overlay);
+  }
+
+  .shell[data-drawer='open'] .rail {
+    transform: translateX(0);
+  }
+
+  .specimen__menu {
+    display: grid;
+  }
+
+  .specimen__join {
+    display: none;
+  }
+
+  .spec-chip {
+    max-width: 180px;
+  }
+
+  .workspace {
+    padding: var(--s-5) var(--s-4);
+  }
+
+  .shell[data-rail='collapsed'] .rail__wordmark,
+  .shell[data-rail='collapsed'] .rail__tagline,
+  .shell[data-rail='collapsed'] .rail__search-text,
+  .shell[data-rail='collapsed'] .module__name,
+  .shell[data-rail='collapsed'] .module__count,
+  .shell[data-rail='collapsed'] .module__chevron,
+  .shell[data-rail='collapsed'] .nav-link__text,
+  .shell[data-rail='collapsed'] .rail__user-text {
+    display: revert;
+  }
+
+  .shell[data-rail='collapsed'] .nav-link {
+    justify-content: flex-start;
+    margin-left: var(--s-3);
+    border-left: 1px solid var(--ink-700);
+    padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3);
+  }
+
+  .shell[data-rail='collapsed'] .module__summary,
+  .shell[data-rail='collapsed'] .rail__brand,
+  .shell[data-rail='collapsed'] .rail__user {
+    justify-content: flex-start;
+    padding-left: var(--s-2);
+    padding-right: var(--s-2);
+  }
+
+  .shell[data-rail='collapsed'] .rail__brand {
+    gap: var(--s-3);
+  }
+
+  .shell[data-rail='collapsed'] .rail__search {
+    width: auto;
+    height: 32px;
+    margin: var(--s-3) var(--s-3) var(--s-2);
+    justify-content: flex-start;
+    padding: 0 var(--s-2) 0 var(--s-3);
+  }
+
+  .rail__collapse {
+    display: none;
+  }
+}
+
+/* Mobile — hide reading, compact everything further */
+@media (max-width: 720px) {
+  .specimen {
+    padding: 0 var(--s-3);
+    gap: var(--s-2);
+  }
+
+  .specimen__join,
+  .specimen__reading {
+    display: none;
+  }
+
+  .spec-chip {
+    max-width: 40vw;
+    height: 30px;
+    padding: var(--s-1) var(--s-1) var(--s-1) var(--s-2);
+  }
+
+  .spec-chip__kind {
+    display: none;
+  }
+
+  .spec-chip__name {
+    font-size: var(--fs-12);
+  }
+
+  .specimen__score-compact {
+    display: flex;
+  }
+
+  .specimen__actions .hide-sm {
+    display: none;
+  }
+
+  .workspace {
+    padding: var(--s-4) var(--s-3);
+  }
+
+  .page-title {
+    font-size: var(--fs-24);
+  }
+}
+
+/* Very small phones — hide the role chip entirely, keep only CV chip */
+@media (max-width: 400px) {
+  .spec-chip--role {
+    display: none;
+  }
+
+  .spec-chip {
+    max-width: 52vw;
+  }
+
+  .specimen__pair {
+    gap: var(--s-1);
+  }
+
+  .specimen__score-compact .numeral {
+    font-size: var(--fs-16);
+  }
+}
+
+/* ---- Route transition ------------------------------------------------ */
+
+.workspace > .route {
+  animation: route-in var(--t-med) var(--ease-out) both;
+}
+
+@keyframes route-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="SkillMatch Pro", version="1.0.0")
+
+app = FastAPI(title="Calibre", version="1.0.0")
 
 @app.get("/")
 def root():
@@ -19,6 +20,10 @@ app.add_middleware(
 
 
 # Including the routers
-from app.api.analysis import router as analysis_router
-app.include_router(analysis_router)
+from app.api.candidates import router as candidates_router
 
+app.include_router(
+    candidates_router,
+    prefix="/api/v1", 
+    tags=["Candidates"]
+    )

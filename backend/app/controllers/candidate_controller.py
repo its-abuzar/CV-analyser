@@ -1,22 +1,49 @@
 from fastapi import HTTPException
 from app.services.candidate_service import CandidateService
-from app.schemas.candidate_schema import CandidateProfileResponse
 
 service = CandidateService()
 
 class CandidateController:
     async def create_candidate_from_bytes(self, contents: bytes, filename: str):
-        try:
-            candidate = service.process_upload(contents, filename)
-            
-            # Return using the Pydantic schema
-            return CandidateProfileResponse(
-                name=candidate.name,
-                summary=candidate.summary,
-                skills=candidate.skills,
-                experience=candidate.experience,
-                education=candidate.education
-            )
-        except Exception as e:
-            # Log the error here if you have logging set up
-            raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+        candidate = service.process_upload(contents, filename)
+        return {
+            "name": candidate.name,
+            "contact": {
+                "email": candidate.contact.email,
+                "phone": candidate.contact.phone,
+                "location": candidate.contact.location,
+                "linkedin": candidate.contact.linkedin,
+                "github": candidate.contact.github
+            },
+            "summary": candidate.summary,
+            "skills": candidate.skills,
+            "experience": [
+                {
+                    "title": e.title,
+                    "company": e.company,
+                    "location": e.location,
+                    "start_date": e.start_date,
+                    "end_date": e.end_date,
+                    "bullet_points": e.bullet_points
+                } for e in candidate.experience
+            ],
+            "education": [
+                {
+                    "degree": e.degree,
+                    "institution": e.institution,
+                    "location": e.location,
+                    "start_date": e.start_date,
+                    "end_date": e.end_date,
+                    "gpa": e.gpa
+                } for e in candidate.education
+            ],
+            "certifications": candidate.certifications,
+            "projects": [
+                {
+                    "name": p.name,
+                    "description": p.description,
+                    "technologies": p.technologies
+                } for p in candidate.projects
+            ],
+            "languages": candidate.languages
+        }

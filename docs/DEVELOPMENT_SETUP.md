@@ -3,14 +3,16 @@
 ## Prerequisites
 
 ### Required Software
+
 | Tool | Version | Purpose |
 |------|---------|---------|
 | Python | 3.11+ | Backend runtime |
-| Node.js | 18+ | Frontend tooling (optional) |
+| Node.js | 18+ (optional) | Frontend tooling (for build steps) |
 | Git | Latest | Version control |
 | VS Code / IDE | Latest | Development |
 
 ### Optional (for database)
+
 | Tool | Version | Purpose |
 |------|---------|---------|
 | PostgreSQL | 15+ | Production database |
@@ -21,12 +23,14 @@
 ## Quick Start (Current State)
 
 ### 1. Clone & Navigate
+
 ```bash
 git clone <repository-url>
 cd "CV Scanner Project"
 ```
 
 ### 2. Backend Setup
+
 ```bash
 cd backend
 
@@ -47,9 +51,11 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Backend runs at:** http://localhost:8000  
-**API Docs:** http://localhost:8000/docs
+**API Docs:** http://localhost:8000/docs  
+**API v1 Docs:** http://localhost:8000/api/v1/docs
 
 ### 3. Frontend Setup
+
 ```bash
 cd frontend
 
@@ -70,6 +76,7 @@ npx serve .
 ## Detailed Backend Setup
 
 ### Virtual Environment
+
 ```bash
 # Create
 python -m venv venv
@@ -88,6 +95,7 @@ deactivate
 ```
 
 ### Dependencies
+
 ```bash
 # Install from requirements.txt
 pip install -r requirements.txt
@@ -103,20 +111,31 @@ python -m pip install --upgrade pip
 ```
 
 ### Environment Variables
+
 Create `.env` file in `backend/`:
+
 ```env
 # Current (minimal)
 # No variables required yet
 
 # Future (planned)
-# DATABASE_URL=postgresql://user:pass@localhost/skillmatch
-# SECRET_KEY=your-secret-key-here
-# ALGORITHM=HS256
-# ACCESS_TOKEN_EXPIRE_MINUTES=30
-# FRONTEND_URL=http://localhost:8080
+DATABASE_URL=postgresql://user:pass@localhost/skillmatch
+SECRET_KEY=your-secret-key-here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+FRONTEND_URL=http://localhost:8080
+
+# Optional (Stripe integration)
+STRIPE_PUBLIC_KEY=your-stripe-key
+STRIPE_SECRET_KEY=your-stripe-secret
+
+# External Services
+OPENAI_API_KEY=sk-...  # For AI-powered features
+DOCLING_ENABLED=true
 ```
 
 ### Running the Backend
+
 ```bash
 # Development (auto-reload)
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -129,19 +148,107 @@ uvicorn app.main:app --workers 4 --host 0.0.0.0 --port 8000
 ```
 
 ### API Documentation
+
 - **Swagger UI:** http://localhost:8000/docs
 - **ReDoc:** http://localhost:8000/redoc
+- **API v1:** http://localhost:8000/api/v1/docs
 
 ---
 
 ## Detailed Frontend Setup
 
+### Project Structure
+
+```
+frontend/
+├── index.html          # HTML shell (boot + root divs)
+├── styles/             # CSS architecture (tokens, base, components, pages, shell)
+│   ├── tokens.css      # Design tokens (colors, spacing, typography)
+│   ├── base.css        # Base reset, variables, theme support
+│   ├── components.css  # UI primitives (buttons, cards, gauges, etc.)
+│   ├── shell.css       # Shell layout (rail, specimen bar, palette)
+│   └── pages.css       # Page-specific styles
+└── src/
+    ├── main.js         # Boot, global event handling, delegation
+    ├── router.js       # Hash router, lazy page loading, prefetch
+    ├── registry.js     # Feature registry (51 features across 8 modules)
+    ├── store.js        # App state management
+    ├── services/       # API service layer
+    │   ├── api.js      # API client with endpoint calls
+    │   ├── config.js   # Config (mock/realtime mode)
+    │   ├── endpoints.js # 152+ named API endpoints
+    │   ├── client.js   # Low-level fetch wrapper
+    │   └── prefetch.js # Data prefetch resolution
+    ├── pages/          # 51 page modules (lazy-loaded)
+    │   ├── overview.js          # Home/dashboard screen
+    │   ├── intake.js            # CV/LinkedIn/GitHub/job input
+    │   ├── profile.js           # Parsed profile editor
+    │   ├── analysis.js          # Run analysis screen
+    │   ├── compare.js           # Side-by-side comparison
+    │   ├── evidence.js          # Evidence trail viewer
+    │   ├── benchmark.js         # Peer benchmarking
+    │   ├── matrix.js            # Multi-job scoring grid
+    │   ├── bullets.js           # Bullet workshop/editor
+    │   ├── tailor.js            # Tailored CV generator
+    │   ├── templates.js         # Template studio
+    │   ├── summary.js           # Summary & headline writer
+    │   ├── keywords.js          # Keyword placement screen
+    │   ├── achievements.js      # Achievement finder
+    │   ├── claims.js            # Claims ledger verifier
+    │   ├── questions.js         # Interview question set
+    │   ├── mock.js              # Mock interview simulator
+    │   ├── coach.js             # Answer coach/grader
+    │   ├── technical.js         # Technical drill
+    │   ├── behavioural.js       # Behavioral bank
+    │   ├── weak-spots.js        # Weak spots rehearsal
+    │   ├── reverse-questions.js # Questions to ask interviewer
+    │   ├── research.js          # Company brief
+    │   ├── stories.js           # Story bank
+    │   ├── discover.js          # Job discover/feed
+    │   ├── alerts.js            # Saved searches/alerts
+    │   ├── ideal-role.js        # Ideal role recommender
+    │   ├── tracker.js           # Application tracker (Kanban)
+    │   ├── outreach.js          # Outreach kit/writing
+    │   ├── cover-letter.js      # Cover letter draft
+    │   ├── watchlist.js         # Company watchlist
+    │   ├── roadmap.js           # Skill roadmap planner
+    │   ├── certifications.js    # Certification planner
+    │   ├── career-paths.js      # Career path explorer
+    │   ├── market.js            # Market signals/trends
+    │   ├── projects.js          # Project ideas generator
+    │   ├── progress.js          # Progress chart/history
+    │   ├── search.js            # Global search/palette
+    │   ├── reports.js           # Reports & export
+    │   ├── privacy.js           # Privacy & data controls
+    │   ├── integrations.js      # Backend/Li/GitHub integrations
+    │   ├── review.js            # Peer review sharing
+    │   ├── recruiter.js        # Recruiter mode (bulk screening)
+    │   ├── activity.js          # Activity log
+    │   └── settings.js          # Appearance, density, shortcuts
+    ├── ui/             # Design system primitives and bits
+    │   ├── primitives.js  # Low-level UI components (30+)
+    │   ├── bits.js        # Page composites from primitives
+    │   ├── icons.js       # Icon utility
+    │   ├── loader.js      # Region loading skeletons
+    │   └── overlays.js    # Modals, drawers, toasts
+    ├── data/           # Fixtures and mock data
+    │   └── fixtures.js    # Mock API payload shapes
+    ├── shell/          # Shell components
+    │   ├── rail.js        # Navigation rail
+    │   ├── palette.js     # Command palette
+    │   └── specimenBar.js # Specimen bar (candidate/role)
+    └── services/       # Service utilities
+        └── api.js       # API service client
+```
+
 ### No Build Step Required
-The frontend is vanilla HTML/CSS/JS - no compilation needed.
+
+The frontend is vanilla JavaScript/CSS/HTML - no compilation needed. All 51 pages are lazy-loaded via hash-based routing.
 
 ### Serving Options
 
 #### Python (Built-in)
+
 ```bash
 cd frontend
 python -m http.server 8080
@@ -149,6 +256,7 @@ python -m http.server 8080
 ```
 
 #### Node.js (if available)
+
 ```bash
 # Install serve globally
 npm install -g serve
@@ -158,11 +266,13 @@ serve . -l 8080
 ```
 
 #### VS Code Live Server
+
 1. Install "Live Server" extension
 2. Right-click `index.html`
 3. Select "Open with Live Server"
 
 #### Docker (Development)
+
 ```dockerfile
 # Dockerfile.frontend
 FROM nginx:alpine
@@ -183,21 +293,39 @@ docker run -p 8080:80 skillmatch-frontend
 CV Scanner Project/
 ├── backend/
 │   ├── app/
-│   │   ├── api/           # FastAPI routes
-│   │   ├── controllers/   # Request handlers
-│   │   ├── models/        # Data models
-│   │   ├── pipeline/      # PDF/Markdown processing
-│   │   ├── services/      # Business logic
-│   │   └── main.py        # App entry point
-│   ├── uploads/           # Uploaded files
-│   ├── tests/             # Test files
-│   ├── requirements.txt   # Python deps
-│   └── .env               # Environment config
+│   │   ├── api/                   # FastAPI routes (152+ endpoints)
+│   │   ├── controllers/           # Request handlers
+│   │   ├── models/                # SQLAlchemy/Pydantic models
+│   │   ├── pipeline/              # PDF/Markdown processing pipeline
+│   │   ├── services/              # Business logic (analysis engines)
+│   │   ├── schemas/               # Pydantic request/response models
+│   │   └── main.py                # FastAPI entry point
+│   ├── uploads/                   # Uploaded files directory
+│   ├── tests/                     # Test files (pytest)
+│   ├── requirements.txt           # Python dependencies
+│   └── .env                       # Environment config
 ├── frontend/
-│   ├── index.html         # Main HTML
-│   ├── script.js          # App logic
-│   └── style.css          # Styling
-└── docs/                  # Documentation
+│   ├── index.html                 # HTML shell
+│   ├── styles/                    # CSS architecture
+│   └── src/                       # Source code (51 pages, services, UI)
+│       ├── main.js                # Boot, global event handling, delegation
+│       ├── router.js              # Hash router, lazy page loading
+│       ├── registry.js            # Feature registry (51 features)
+│       ├── store.js               # App state management
+│       ├── services/              # API service layer
+│       ├── pages/                 # 51 page modules
+│       ├── ui/                    # Design system primitives and bits
+│       ├── data/                  # Fixtures and mock data
+│       └── shell/                 # Shell components
+├── docs/                          # Documentation
+│   ├── api/                       # API-specific docs (planned)
+│   ├── architecture/              # Architecture diagrams (planned)
+│   ├── BACKEND_API.md             # Backend API documentation
+│   ├── DATABASE_SCHEMA.md         # Database schema documentation
+│   ├── DEVELOPMENT_SETUP.md       # Development setup guide
+│   ├── FRONTEND_ARCHITECTURE.md # Frontend architecture documentation
+│   └── screenshots/               # Product screenshots
+└── .gitignore
 ```
 
 ---
@@ -207,16 +335,19 @@ CV Scanner Project/
 ### Making Changes
 
 #### Backend
+
 1. Edit files in `backend/app/`
 2. Server auto-reloads (with `--reload`)
 3. Test at http://localhost:8000/docs
 
 #### Frontend
-1. Edit `frontend/index.html`, `script.js`, or `style.css`
+
+1. Edit page modules in `frontend/src/pages/`
 2. Refresh browser (or Live Server auto-refreshes)
 3. Test at http://localhost:8080
 
 ### Adding Backend Dependencies
+
 ```bash
 cd backend
 venv\Scripts\activate  # or source venv/bin/activate
@@ -225,18 +356,21 @@ pip freeze > requirements.txt
 ```
 
 ### Adding Frontend Dependencies
-Currently no package.json. For future:
+
+Currently no package.json required - vanilla JS. For future build system:
+
 ```bash
 cd frontend
 npm init -y
-npm install package-name
+npm install package-name  # e.g., vue, react, etc.
 ```
 
 ---
 
 ## Testing
 
-### Backend Tests (When Implemented)
+### Backend Tests
+
 ```bash
 cd backend
 venv\Scripts\activate
@@ -249,89 +383,28 @@ pytest --cov=app tests/
 
 # Run specific test file
 pytest tests/test_analysis.py -v
+
+# Run specific test
+pytest tests/ -k "pdf_parser" -v
 ```
 
-### Frontend Tests (Planned)
+### Frontend Tests (Manual)
+
+The frontend is designed for manual testing across browsers, but the architecture supports automated testing:
+
 ```bash
+# If adding Vitest later
 cd frontend
-npm test           # Vitest
-npm run test:e2e   # Playwright
+npm test              # Vitest
+
+# If adding Playwright later
+npm run test:e2e      # Playwright
 ```
 
----
+### Code Quality
 
-## Debugging
+#### Python (Backend)
 
-### Backend Debugging (VS Code)
-Create `.vscode/launch.json`:
-```json
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "FastAPI Debug",
-      "type": "python",
-      "request": "launch",
-      "module": "uvicorn",
-      "args": ["app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
-      "jinja": true,
-      "justMyCode": true
-    }
-  ]
-}
-```
-
-### Frontend Debugging
-- Open browser DevTools (F12)
-- Use Console for logs
-- Use Network tab for API calls
-- Use Sources tab for breakpoints
-
-### Common Issues
-
-#### Port Already in Use
-```bash
-# Find process on port 8000
-netstat -ano | findstr :8000
-
-# Kill process (replace PID)
-taskkill /PID <PID> /F
-```
-
-#### Virtual Environment Not Activated
-```bash
-# Check if activated (should show venv path)
-which python
-# or
-where python
-```
-
-#### Module Not Found
-```bash
-# Reinstall dependencies
-pip install -r requirements.txt
-
-# Check installed packages
-pip list
-```
-
-#### CORS Errors
-Backend allows all origins (`*`) in development. For production, update `app/main.py`:
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://yourdomain.com"],  # Specific origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
-
----
-
-## Code Quality Tools
-
-### Python (Backend)
 ```bash
 # Format with Black
 pip install black
@@ -347,15 +420,16 @@ pip install mypy
 mypy backend/app/
 ```
 
-### JavaScript (Frontend - Future)
+#### JavaScript (Frontend - Future)
+
 ```bash
 # ESLint
 npm install -D eslint
-npx eslint frontend/script.js
+npx eslint frontend/src/
 
 # Prettier
 npm install -D prettier
-npx prettier --write frontend/
+npx prettier --write frontend/src/
 ```
 
 ---
@@ -363,6 +437,7 @@ npx prettier --write frontend/
 ## Git Workflow
 
 ### Branching Strategy
+
 ```
 main                    # Production-ready
 ├── develop             # Integration branch
@@ -372,6 +447,7 @@ main                    # Production-ready
 ```
 
 ### Commit Messages
+
 ```
 feat: add tech stack analysis mode
 fix: resolve PDF parsing error for scanned documents
@@ -381,12 +457,12 @@ test: add unit tests for markdown parser
 ```
 
 ### Pre-commit Hooks (Optional)
+
 ```bash
 pip install pre-commit
 pre-commit install
-```
 
-Create `.pre-commit-config.yaml`:
+Create .pre-commit-config.yaml:
 ```yaml
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -395,75 +471,4 @@ repos:
       - id: ruff
       - id: ruff-format
 ```
-
----
-
-## IDE Configuration
-
-### VS Code Recommended Extensions
-```json
-{
-  "recommendations": [
-    "ms-python.python",
-    "ms-python.vscode-pylance",
-    "charliermarsh.ruff",
-    "esbenp.prettier-vscode",
-    "bradlc.vscode-tailwindcss",
-    "ritwickde.liveserver"
-  ]
-}
 ```
-
-### VS Code Settings (`.vscode/settings.json`)
-```json
-{
-  "python.defaultInterpreterPath": "${workspaceFolder}/backend/venv/Scripts/python.exe",
-  "python.linting.enabled": true,
-  "python.linting.ruffEnabled": true,
-  "editor.formatOnSave": true,
-  "editor.codeActionsOnSave": {
-    "source.organizeImports": "explicit"
-  },
-  "[python]": {
-    "editor.defaultFormatter": "charliermarsh.ruff"
-  },
-  "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
-}
-```
-
----
-
-## Troubleshooting
-
-### Docling Installation Issues
-```bash
-# If docling fails to install
-pip install --upgrade pip setuptools wheel
-pip install docling
-
-# On Windows, may need Visual C++ Build Tools
-# Download from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
-```
-
-### PDF Parsing Errors
-- Ensure PDF is not password-protected
-- Try with simpler PDF first
-- Check file size < 10MB
-
-### Frontend Not Loading
-- Check browser console for errors
-- Verify file paths in index.html (relative paths)
-- Ensure serving from `frontend/` directory
-
----
-
-## Next Steps for Development
-
-1. **Integrate Backend API** - Replace mock simulation in `script.js`
-2. **Add Database** - Implement PostgreSQL models
-3. **Authentication** - Add JWT auth
-4. **File Upload** - Implement multipart file handling
-5. **Testing** - Add unit/integration tests
-6. **CI/CD** - GitHub Actions workflow

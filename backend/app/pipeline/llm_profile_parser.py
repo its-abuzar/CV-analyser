@@ -2,7 +2,8 @@ import json
 import re
 import requests
 from app.models.candidate_profile import (
-    CandidateProfile, Contact, Experience, Education, Project
+    CandidateProfile, Contact, Experience, Education, Project,
+    Volunteer, Publication, Award, Reference, Membership
 )
 
 class LLMProfileParser:
@@ -23,21 +24,12 @@ class LLMProfileParser:
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.0,
-            "max_tokens": 4096
+            "max_tokens": 8192
         }
-        try:
-            response = requests.post(
-                f"{self.base_url}/v1/chat/completions",
-                headers=headers,
-                json=payload,
-                timeout=60
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data["choices"][0]["message"]["content"]
-        except Exception as e:
-            print(f"OmniRoute API error: {e}")
-            raise
+        response = requests.post(f"{self.base_url}/chat/completions", headers=headers, json=payload, timeout=60)
+        response.raise_for_status()
+        data = response.json()
+        return data["choices"][0]["message"]["content"]
 
     def _clean_json(self, raw: str) -> str:
         match = re.search(r'```(?:json)?\s*(\{.*\})\s*```', raw, re.DOTALL)
@@ -50,94 +42,100 @@ class LLMProfileParser:
         return raw
 
     def parse(self, markdown: str) -> CandidateProfile:
-        # ================================================================
-        # STEP 1: REASON & EXTRACT (Chain-of-Thought)
-        # ================================================================
         prompt = f"""
-You are an expert CV parser. You will analyze the CV text and extract structured data.
+You are an expert CV parser. Analyze the CV text below and extract **every possible section**.
 
 **CRITICAL RULES (MUST FOLLOW):**
-
-1. **NEVER INVENT.** If something is not explicitly stated, return "" or [].
-2. **Reason about ambiguity.** If a date appears once (e.g., "November 2024"), treat it as START_DATE. If a second date appears later, treat it as END_DATE.
-3. **"T/A" means "Turn Around"** — it is a TYPE OF WORK (maintenance shutdown), NOT a date. Do not put "T/A" in dates. Put it in bullet_points if relevant.
-4. **Skills vs. Bullet Points:**
-   - "skills" = ONLY technical/software/language skills (e.g., Python, Welding, Project Management).
-   - DO NOT put job duties (e.g., "Over Hauling Pumps") in skills. Put them in bullet_points of the relevant experience.
-5. **Experience:** Extract EVERY job. If bullet_points are missing but the CV lists duties elsewhere (e.g., a separate "Equipment Specialties" section), apply those duties to ALL relevant experience entries.
-6. **Dates:** Format as "Month Year" (e.g., "November 2024") or just "Year" (e.g., "2023"). If end date is missing, use "".
-7. **Languages:** Separate from skills. Extract spoken languages only.
+1. **NEVER INVENT.** If a section or field is not present, return empty string "" or empty list [].
+2. **For dates:** If only one date is given, treat it as START_DATE. If two dates appear (e.g., "2020 – 2022"), use them as start and end.
+3. **"T/A", "Turn Around", "Shutdown"** are TYPES OF WORK, not dates. Put them in bullet_points or description, never in dates.
+4. **Skills vs. Job Duties:** Skills are technical (Python, Welding, Project Management). Job duties (e.g., "Overhauling pumps") go into bullet_points of the relevant experience.
+5. **Every section** must be extracted if present: contact, summary, skills, experience, education, certifications, projects, languages, volunteer, publications, awards, references, memberships, interests, portfolio links.
 
 ---
 
-**Now, analyze the CV step by step:**
-
-**Step 1 — Identify the person:**
-- Who is this person? What is their full name?
-- What is their contact info (email, phone, location, LinkedIn, GitHub)?
-
-**Step 2 — Identify the summary:**
-- Is there a professional summary or objective? Extract it exactly.
-
-**Step 3 — Identify skills:**
-- What are the technical skills (languages, tools, methodologies)?
-- EXCLUDE job duties like "Over Hauling Pumps" — those go in bullet_points.
-
-**Step 4 — Identify experience:**
-- List every job/role in chronological order.
-- For each, extract: title, company, location, start_date, end_date, bullet_points.
-- If bullet_points are missing, infer them from the CV's "Equipment Specialties" or "Skills" sections if they are clearly job duties.
-
-**Step 5 — Identify education:**
-- List every degree/certification with institution, location, dates, GPA.
-
-**Step 6 — Identify certifications, projects, languages:**
-- Extract any certifications, projects, and spoken languages.
-
----
-
-**Return ONLY valid JSON with this exact structure:**
+**EXACT OUTPUT STRUCTURE (Return ONLY valid JSON):**
 
 {{
   "name": "Full Name",
   "contact": {{
-    "email": "email@domain.com",
-    "phone": "+92 300 1234567",
-    "location": "City, Country",
-    "linkedin": "linkedin.com/in/username",
-    "github": "github.com/username"
+    "email": "",
+    "phone": "",
+    "location": "",
+    "linkedin": "",
+    "github": ""
   }},
-  "summary": "Professional summary text",
-  "skills": ["Python", "Java", "React"],
+  "summary": "",
+  "skills": [],
   "experience": [
     {{
-      "title": "Software Engineer",
-      "company": "Google",
-      "location": "Karachi, Pakistan",
-      "start_date": "Jan 2020",
-      "end_date": "Dec 2023",
-      "bullet_points": ["Built APIs serving 1M users", "Led team of 5"]
+      "title": "",
+      "company": "",
+      "location": "",
+      "start_date": "",
+      "end_date": "",
+      "bullet_points": []
     }}
   ],
   "education": [
     {{
-      "degree": "BS Computer Science",
-      "institution": "FAST University",
-      "location": "Lahore, Pakistan",
-      "start_date": "2016",
-      "end_date": "2020",
-      "gpa": "3.8/4.0"
+      "degree": "",
+      "institution": "",
+      "location": "",
+      "start_date": "",
+      "end_date": "",
+      "gpa": ""
     }}
   ],
-  "certifications": ["AWS Certified", "Google Cloud Associate"],
+  "certifications": [],
   "projects": [
     {{
-      "name": "E-commerce Platform",
-      "description": "Full-stack e-commerce with payment integration",
-      "technologies": ["React", "Node.js", "PostgreSQL"]
+      "name": "",
+      "description": "",
+      "technologies": []
     }}
   ],
-  "languages": ["English (Fluent)", "Urdu (Native)"]
+  "languages": [],
+  "volunteer": [
+    {{
+      "organization": "",
+      "role": "",
+      "start_date": "",
+      "end_date": "",
+      "description": ""
+    }}
+  ],
+  "publications": [
+    {{
+      "title": "",
+      "journal": "",
+      "date": "",
+      "authors": "",
+      "link": ""
+    }}
+  ],
+  "awards": [
+    {{
+      "name": "",
+      "issuer": "",
+      "date": ""
+    }}
+  ],
+  "references": [
+    {{
+      "name": "",
+      "contact": "",
+      "relationship": ""
+    }}
+  ],
+  "memberships": [
+    {{
+      "organization": "",
+      "role": ""
+    }}
+  ],
+  "interests": [],
+  "portfolio_links": []
 }}
 
 ---
@@ -145,52 +143,22 @@ You are an expert CV parser. You will analyze the CV text and extract structured
 **CV TEXT:**
 {markdown}
 
-**OUTPUT ONLY THE JSON.** Do not include any other text.
+**OUTPUT ONLY THE JSON.**
 """
 
         raw = self._call_llm(prompt)
         data = json.loads(self._clean_json(raw))
 
-        # ================================================================
-        # STEP 2: BUILD PROFILE
-        # ================================================================
-        contact = Contact(
-            email=data.get("contact", {}).get("email", ""),
-            phone=data.get("contact", {}).get("phone", ""),
-            location=data.get("contact", {}).get("location", ""),
-            linkedin=data.get("contact", {}).get("linkedin", ""),
-            github=data.get("contact", {}).get("github", "")
-        )
-
-        experience = []
-        for exp in data.get("experience", []):
-            experience.append(Experience(
-                title=exp.get("title", ""),
-                company=exp.get("company", ""),
-                location=exp.get("location", ""),
-                start_date=exp.get("start_date", ""),
-                end_date=exp.get("end_date", ""),
-                bullet_points=exp.get("bullet_points", [])
-            ))
-
-        education = []
-        for edu in data.get("education", []):
-            education.append(Education(
-                degree=edu.get("degree", ""),
-                institution=edu.get("institution", ""),
-                location=edu.get("location", ""),
-                start_date=edu.get("start_date", ""),
-                end_date=edu.get("end_date", ""),
-                gpa=edu.get("gpa", "")
-            ))
-
-        projects = []
-        for proj in data.get("projects", []):
-            projects.append(Project(
-                name=proj.get("name", ""),
-                description=proj.get("description", ""),
-                technologies=proj.get("technologies", [])
-            ))
+        # --- Build nested objects with safe defaults ---
+        contact = Contact(**data.get("contact", {}))
+        experience = [Experience(**e) for e in data.get("experience", [])]
+        education = [Education(**e) for e in data.get("education", [])]
+        projects = [Project(**p) for p in data.get("projects", [])]
+        volunteer = [Volunteer(**v) for v in data.get("volunteer", [])]
+        publications = [Publication(**p) for p in data.get("publications", [])]
+        awards = [Award(**a) for a in data.get("awards", [])]
+        references = [Reference(**r) for r in data.get("references", [])]
+        memberships = [Membership(**m) for m in data.get("memberships", [])]
 
         return CandidateProfile(
             name=data.get("name", ""),
@@ -201,5 +169,12 @@ You are an expert CV parser. You will analyze the CV text and extract structured
             education=education,
             certifications=data.get("certifications", []),
             projects=projects,
-            languages=data.get("languages", [])
+            languages=data.get("languages", []),
+            volunteer=volunteer,
+            publications=publications,
+            awards=awards,
+            references=references,
+            memberships=memberships,
+            interests=data.get("interests", []),
+            portfolio_links=data.get("portfolio_links", [])
         )

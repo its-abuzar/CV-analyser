@@ -9,7 +9,7 @@ class CandidateService:
         self.upload_dir = Path("uploads")
         self.upload_dir.mkdir(parents=True, exist_ok=True)
         self.pdf_parser = PDFParser()
-        self.llm_parser = LLMProfileParser()
+        self.llm_parser = LLMProfileParser(api_key="sk-e53036b3ff5bc5d0-d94e50-a2bf58b7")
 
     def process_upload(self, contents: bytes, original_filename: str) -> CandidateProfile:
         generated_filename = f"{uuid.uuid4()}.pdf"

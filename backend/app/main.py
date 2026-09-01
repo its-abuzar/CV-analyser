@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from dotenv import load_dotenv
+load_dotenv()
 
 app = FastAPI(title="Calibre", version="1.0.0")
 
@@ -21,9 +22,12 @@ app.add_middleware(
 
 # Including the routers
 from app.api.candidates import router as candidates_router
+from app.api.jobs import router as jobs_router
 
 app.include_router(
     candidates_router,
     prefix="/api/v1", 
     tags=["Candidates"]
     )
+
+app.include_router(jobs_router, prefix="/api/v1", tags=["Job Descriptions"])

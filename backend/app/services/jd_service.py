@@ -1,21 +1,21 @@
 from pathlib import Path
 import uuid
 from app.pipeline.pdf_parser import PDFParser
-from app.pipeline.cv_profile_parser import CVProfileParser     
-from app.models.candidate_profile import CandidateProfile
+from app.pipeline.jd_profile_parser import JDProfileParser
+from app.models.job_description import JobDescription
 
-class CandidateService:
+class JDService:
     def __init__(self):
         self.upload_dir = Path("uploads")
         self.upload_dir.mkdir(parents=True, exist_ok=True)
         self.pdf_parser = PDFParser()
-        self.cv_parser = CVProfileParser()   
+        self.jd_parser = JDProfileParser()
 
-    def process_upload(self, contents: bytes, original_filename: str) -> CandidateProfile:
+    def process_upload(self, contents: bytes, original_filename: str) -> JobDescription:
         generated_filename = f"{uuid.uuid4()}.pdf"
         file_path = self.upload_dir / generated_filename
         file_path.write_bytes(contents)
         markdown = self.pdf_parser.parse(str(file_path))
-        candidate = self.cv_parser.parse(markdown)
-        file_path.unlink()
-        return candidate
+        jd = self.jd_parser.parse(markdown)
+        file_path.unlink()  # optional cleanup
+        return jd

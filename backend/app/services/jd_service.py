@@ -17,5 +17,5 @@ class JDService:
         file_path.write_bytes(contents)
         markdown = self.pdf_parser.parse(str(file_path))
         jd = self.jd_parser.parse(markdown)
-        file_path.unlink()  # optional cleanup
+        file_path.unlink()
         return jd

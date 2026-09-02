@@ -32,8 +32,6 @@ class JDProfileParser:
             salary_range=data.get("salary_range", ""),
             employment_type=data.get("employment_type", ""),
             seniority_level=data.get("seniority_level", ""),
-            posted_date=data.get("posted_date", ""),
-            application_deadline=data.get("application_deadline", ""),
             required_skills=data.get("required_skills", []),
             preferred_skills=data.get("preferred_skills", []),
             responsibilities=data.get("responsibilities", []),
@@ -41,6 +39,5 @@ class JDProfileParser:
             qualifications=data.get("qualifications", []),
             company_description=data.get("company_description", ""),
             industry=data.get("industry", ""),
-            company_size=data.get("company_size", ""),
-            source_url=data.get("source_url", "")
+            company_size=data.get("company_size", "")
         )

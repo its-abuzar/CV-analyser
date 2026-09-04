@@ -1,0 +1,31 @@
+# Matching Engine Configuration
+weights:
+  skill_match: 0.35
+  experience_match: 0.25
+  education_match: 0.15
+  role_relevance: 0.15
+  keyword_coverage: 0.10
+
+critical_rules:
+  - id: missing_required_skill
+    cap: 50
+  - id: no_degree_when_required
+    cap: 40
+  - id: experience_below_senior
+    cap: 60
+
+verdicts:
+  - min: 80
+    max: 100
+    label: "Strong Match"
+  - min: 60
+    max: 79
+    label: "Potential Match"
+  - min: 40
+    max: 59
+    label: "Weak Match"
+  - min: 0
+    max: 39
+    label: "Not a Fit"
+
+failure_cap: 50.0

@@ -5,8 +5,18 @@ import re
 
 from app.models import job_description, candidate_profile
 
-# For EducationMatchMetric semantic similarity
 from sentence_transformers import SentenceTransformer, util
+
+# Load model once globally
+_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+
+def _semantic_score(text1: str, text2: str) -> float:
+    """Return similarity score between two texts (0–100)."""
+    if not text1 or not text2:
+        return 0.0
+    emb1 = _MODEL.encode(text1, convert_to_tensor=True)
+    emb2 = _MODEL.encode(text2, convert_to_tensor=True)
+    return util.cos_sim(emb1, emb2).item() * 100.0
 
 class MetricCalculator(ABC):
     @abstractmethod
@@ -15,12 +25,19 @@ class MetricCalculator(ABC):
 
 class SkillMatchMetric(MetricCalculator):
     def calculate(self, jd: job_description.JobDescription, cv: candidate_profile.CandidateProfile) -> float:
-        required_skills = set(jd.required_skills)
-        candidate_skills = set(cv.skills)
-        matched_skills = required_skills.intersection(candidate_skills)
-        if not required_skills:
+        if not jd.required_skills:
             return 100.0
-        return (len(matched_skills) / len(required_skills)) * 100.0
+        
+        scores = []
+        for skill in jd.required_skills:
+            best = 0.0
+            for cv_skill in cv.skills:
+                sim = _semantic_score(skill, cv_skill)
+                if sim > best:
+                    best = sim
+            scores.append(best)
+        
+        return sum(scores) / len(scores)
 
 class ExperienceMatchMetric(MetricCalculator):
     def _calculate_total_years(self, experiences: List[candidate_profile.Experience]) -> float:
@@ -46,9 +63,6 @@ class ExperienceMatchMetric(MetricCalculator):
         return min((cv_years / required_years) * 100.0, 100.0)
 
 class EducationMatchMetric(MetricCalculator):
-    def __init__(self):
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
-
     def calculate(self, jd: job_description.JobDescription, cv: candidate_profile.CandidateProfile) -> float:
         required = jd.degree_required.strip() if jd.degree_required else ""
         if not required:
@@ -58,14 +72,11 @@ class EducationMatchMetric(MetricCalculator):
         if not cv_degrees:
             return 0.0
 
-        req_emb = self.model.encode(required, convert_to_tensor=True)
         best_score = 0.0
-
         for deg in cv_degrees:
-            deg_emb = self.model.encode(deg, convert_to_tensor=True)
-            similarity = util.cos_sim(req_emb, deg_emb).item() * 100
-            if similarity > best_score:
-                best_score = similarity
+            sim = _semantic_score(required, deg)
+            if sim > best_score:
+                best_score = sim
 
         return min(best_score, 100.0)
 
@@ -74,45 +85,40 @@ class RoleRelevanceMetric(MetricCalculator):
         if not cv.experience:
             return 0.0
 
-        jd_title = jd.title.lower()
-        cv_titles = [exp.title.lower() for exp in cv.experience]
+        jd_title = jd.title
+        cv_titles = [exp.title for exp in cv.experience]
 
-        # Simple check: if any CV title is a substring of JD title or vice versa
+        best = 0.0
         for title in cv_titles:
-            if jd_title in title or title in jd_title:
-                return 100.0
+            sim = _semantic_score(jd_title, title)
+            if sim > best:
+                best = sim
 
-        # Partial match: split into words and check overlap
-        jd_words = set(jd_title.split())
-        for title in cv_titles:
-            cv_words = set(title.split())
-            overlap = jd_words.intersection(cv_words)
-            if overlap:
-                # Score = (overlap size / max words) * 100
-                max_words = max(len(jd_words), len(cv_words))
-                return (len(overlap) / max_words) * 100.0
-
-        return 0.0
+        return min(best, 100.0)
 
 class KeywordCoverageMetric(MetricCalculator):
     def _get_cv_text(self, cv: candidate_profile.CandidateProfile) -> str:
         text = cv.summary + " "
         for exp in cv.experience:
             text += " ".join(exp.bullet_points) + " "
-        return text.lower()
+        return text
 
     def calculate(self, jd: job_description.JobDescription, cv: candidate_profile.CandidateProfile) -> float:
-        jd_keywords = set(jd.required_skills + jd.preferred_skills)
+        jd_keywords = jd.required_skills + jd.preferred_skills
         if not jd_keywords:
             return 100.0
-
+        
         cv_text = self._get_cv_text(cv)
-        matched = 0
-        for kw in jd_keywords:
-            if kw.lower() in cv_text:
-                matched += 1
+        if not cv_text.strip():
+            return 0.0
 
-        return (matched / len(jd_keywords)) * 100.0
+        scores = []
+        for kw in jd_keywords:
+            # Compare keyword against the entire CV text
+            sim = _semantic_score(kw, cv_text[:500])  # Limit length for speed
+            scores.append(sim)
+
+        return sum(scores) / len(scores)
 
 ALL_METRICS = [
     SkillMatchMetric(),

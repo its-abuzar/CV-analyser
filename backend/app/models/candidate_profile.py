@@ -44,10 +44,10 @@ class Volunteer:
 @dataclass
 class Publication:
     title: str = ""
-    journal: str = ""          # or conference
+    journal: str = ""
     date: str = ""
-    authors: str = ""          # optional
-    link: str = ""             # optional
+    authors: str = ""
+    link: str = ""
 
 @dataclass
 class Award:
@@ -58,8 +58,8 @@ class Award:
 @dataclass
 class Reference:
     name: str = ""
-    contact: str = ""          # email or phone
-    relationship: str = ""     # e.g., "Former Manager"
+    contact: str = ""
+    relationship: str = ""
 
 @dataclass
 class Membership:
@@ -77,7 +77,6 @@ class CandidateProfile:
     certifications: List[str] = field(default_factory=list)
     projects: List[Project] = field(default_factory=list)
     languages: List[str] = field(default_factory=list)
-    # --- NEW FIELDS ---
     volunteer: List[Volunteer] = field(default_factory=list)
     publications: List[Publication] = field(default_factory=list)
     awards: List[Award] = field(default_factory=list)

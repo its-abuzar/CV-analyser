@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from sentence_transformers import SentenceTransformer, util
 from app.models import job_description, candidate_profile
 from datetime import datetime
 from typing import List
@@ -40,8 +41,29 @@ class ExperienceMatchMetric(MetricCalculator):
         return min((cv_years / required_years) * 100.0, 100.0)
 
 class EducationMatchMetric(MetricCalculator):
-    def calculate(self, jd: job_description.JobDescription, cv: candidate_profile.CandidateProfile) -> float:
-        return 0.0
+    def __init__(self):
+        self.model = SentenceTransformer('all-MiniLM-L6-v2')
+    
+    def calculate(self, jd, cv):
+        required = jd.degree_required.strip()
+        if not required:
+            return 100.0
+        
+        cv_degrees = [edu.degree.strip() for edu in cv.education if edu.degree]
+        if not cv_degrees:
+            return 0.0
+        
+        # Encode required degree
+        req_emb = self.model.encode(required, convert_to_tensor=True)
+        
+        best_score = 0.0
+        for deg in cv_degrees:
+            deg_emb = self.model.encode(deg, convert_to_tensor=True)
+            similarity = util.cos_sim(req_emb, deg_emb).item() * 100  # 0-100
+            if similarity > best_score:
+                best_score = similarity
+        
+        return min(best_score, 100.0)
 
 class RoleRelevanceMetric(MetricCalculator):
     def calculate(self, jd: job_description.JobDescription, cv: candidate_profile.CandidateProfile) -> float:

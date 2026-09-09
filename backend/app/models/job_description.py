@@ -4,6 +4,7 @@ from typing import List
 @dataclass
 class JobDescription:
     title: str = ""
+    file_name: str = ""
     company: str = ""
     location: str = ""
     salary_range: str = ""

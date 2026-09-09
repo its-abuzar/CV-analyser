@@ -19,24 +19,25 @@ async def create_job_description(file: UploadFile):
 @router.get("/job-descriptions")
 async def list_job_descriptions():
     job_descriptions_dict = {
-        "items": [{"id": jd_id, "file_name": jd.file_name} for jd_id, jd in storage.list_jds().items()]
+        "items": [{"id": jd_id, "file_name": jd.file_name, "active": storage.get_active_jd_id() == jd_id} for jd_id, jd in storage.list_jds().items()]
     }
     return job_descriptions_dict
 
-@router.get("/job-descriptions/{jdId}")
-async def get_job_description(jdId: str):
-    job_description = storage.get_jd(jdId)
+
+@router.get("/job-descriptions/{roleId}")
+async def get_job_description(roleId: str):
+    job_description = storage.get_jd(roleId)
     if not job_description:
         raise HTTPException(status_code=404, detail="Job description not found")
     return {
-        "id": jdId,
+        "id": roleId,   
         "file_name": job_description.file_name
     }   
 
-@router.put("/candidates/{candidateId}/active")
-async def activate_candidate(candidateId: str):
+@router.put("/job-descriptions/{roleId}/active")
+async def activate_job_description(roleId: str):
     try:
-        storage.set_active_cv(candidateId)
+        storage.set_active_jd(roleId)
     except KeyError:
-        raise HTTPException(status_code=404, detail="Candidate not found")
-    return {"activeCandidateId": candidateId}
+        raise HTTPException(status_code=404, detail="Job description not found")
+    return {"activeJobDescriptionId": roleId}

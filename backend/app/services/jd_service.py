@@ -43,5 +43,6 @@ class JDService:
         markdown = self.pdf_parser.parse(str(file_path))
         jd = self.jd_parser.parse(markdown)
         jd = self._extract_degree_and_years(jd)
+        jd.file_name = original_filename
         file_path.unlink()
         return jd

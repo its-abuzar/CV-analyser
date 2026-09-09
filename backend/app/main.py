@@ -24,6 +24,7 @@ app.add_middleware(
 from app.api.candidates import router as candidates_router
 from app.api.jobs import router as jobs_router
 from app.api.analyze import router as analyze_router
+from app.api.workspace import router as workspace_router
 
 app.include_router(
     candidates_router,
@@ -34,3 +35,5 @@ app.include_router(
 app.include_router(jobs_router, prefix="/api/v1", tags=["Job Descriptions"])
 
 app.include_router(analyze_router, prefix="/api/v1", tags=["Analysis"])
+
+app.include_router(workspace_router, prefix="/api/v1", tags=["Workspace"])

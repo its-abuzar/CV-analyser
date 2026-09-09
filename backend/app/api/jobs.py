@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, HTTPException
 from app.controllers.jd_controller import JDController
-from backend.app import storage
+from app.storage import storage
 
 router = APIRouter()
 controller = JDController()
@@ -31,7 +31,8 @@ async def get_job_description(roleId: str):
         raise HTTPException(status_code=404, detail="Job description not found")
     return {
         "id": roleId,   
-        "file_name": job_description.file_name
+        "file_name": job_description.file_name,
+        "active": storage.get_active_jd_id() == roleId
     }   
 
 @router.put("/job-descriptions/{roleId}/active")

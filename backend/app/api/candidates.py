@@ -24,7 +24,26 @@ async def create_candidate(file: UploadFile):
 
 @router.get("/candidates")
 async def list_candidates():
+    candidates_dict = {
+        "items": [{"id": cv_id, "file_name": cv.file_name, "active": storage.get_active_cv_id() == cv_id} for cv_id, cv in storage.list_cvs().items()]
+    }
+    return candidates_dict
 
-    for cv_id, candidate in storage.list_cvs().items():
-        pass  
-    return await storage.list_cvs()
+@router.get("/candidates/{candidateId}")
+async def get_candidate(candidateId: str):
+    candidate = storage.get_cv(candidateId)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    return {
+        "id": candidateId,
+        "file_name": candidate.file_name,
+        "active": storage.get_active_cv_id() == candidateId
+    }
+
+@router.put("/candidates/{candidateId}/active")
+async def activate_candidate(candidateId: str):
+    try:
+        storage.set_active_cv(candidateId)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    return {"activeCandidateId": candidateId}

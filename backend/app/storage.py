@@ -5,18 +5,48 @@ class Storage:
     def __init__(self):
         self.cvs = {}
         self.jds = {}
+        self.active_cv_id = None
+        self.active_jd_id = None
 
+    # ---- CVs ----
     def save_cv(self, cv_id: str, cv: CandidateProfile):
         self.cvs[cv_id] = cv
+        if self.active_cv_id is None:
+            self.active_cv_id = cv_id  # first upload becomes active by default
 
     def get_cv(self, cv_id: str) -> CandidateProfile:
         return self.cvs.get(cv_id)
 
+    def list_cvs(self):
+        return self.cvs  # dict of {id: CandidateProfile}
+
+    def set_active_cv(self, cv_id: str):
+        if cv_id not in self.cvs:
+            raise KeyError(cv_id)
+        self.active_cv_id = cv_id
+
+    def get_active_cv_id(self):
+        return self.active_cv_id
+
+    # ---- JDs ----
     def save_jd(self, jd_id: str, jd: JobDescription):
         self.jds[jd_id] = jd
+        if self.active_jd_id is None:
+            self.active_jd_id = jd_id
 
     def get_jd(self, jd_id: str) -> JobDescription:
         return self.jds.get(jd_id)
+
+    def list_jds(self):
+        return self.jds
+
+    def set_active_jd(self, jd_id: str):
+        if jd_id not in self.jds:
+            raise KeyError(jd_id)
+        self.active_jd_id = jd_id
+
+    def get_active_jd_id(self):
+        return self.active_jd_id
 
 # Singleton instance
 storage = Storage()

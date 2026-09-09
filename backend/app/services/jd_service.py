@@ -13,14 +13,9 @@ class JDService:
         self.jd_parser = JDProfileParser()
 
     def _extract_degree_and_years(self, jd: JobDescription) -> JobDescription:
-        """
-        Post-process the JD to extract degree and years from qualifications list.
-        This is more reliable than asking the LLM to do it directly.
-        """
         degree_keywords = ["bachelor", "master", "phd", "bs", "ms", "b.s.", "m.s.", "bsc", "msc"]
         years_pattern = r'(\d+)\+?\s*(?:-?\s*(\d+))?\s*years?'
 
-        # Extract degree
         for qual in jd.qualifications:
             q_lower = qual.lower()
             for kw in degree_keywords:
@@ -30,7 +25,6 @@ class JDService:
             if jd.degree_required:
                 break
 
-        # Extract years
         for qual in jd.qualifications:
             match = re.search(years_pattern, qual, re.IGNORECASE)
             if match:
@@ -48,7 +42,6 @@ class JDService:
         file_path.write_bytes(contents)
         markdown = self.pdf_parser.parse(str(file_path))
         jd = self.jd_parser.parse(markdown)
-        # Post-process to extract degree and years
         jd = self._extract_degree_and_years(jd)
-        file_path.unlink()  # Clean up
+        file_path.unlink()
         return jd

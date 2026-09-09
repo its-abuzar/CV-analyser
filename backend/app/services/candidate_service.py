@@ -17,5 +17,6 @@ class CandidateService:
         file_path.write_bytes(contents)
         markdown = self.pdf_parser.parse(str(file_path))
         candidate = self.cv_parser.parse(markdown)
+        candidate.file_name = original_filename
         file_path.unlink()
         return candidate

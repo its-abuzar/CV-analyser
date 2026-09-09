@@ -1,5 +1,7 @@
+from datetime import datetime
 from app.models.candidate_profile import CandidateProfile
 from app.models.job_description import JobDescription
+from app.matching.similarity import semantic_similarity
 
 class CriticalRule:
     def __init__(self, rule_id: str, cap_value: float, description: str):
@@ -8,16 +10,21 @@ class CriticalRule:
         self.description = description
 
     def evaluate(self, cv: CandidateProfile, jd: JobDescription) -> bool:
-        # Override in subclasses
         return False
 
 class MissingRequiredSkillRule(CriticalRule):
     def evaluate(self, cv: CandidateProfile, jd: JobDescription) -> bool:
-        cv_skills = set(s.lower() for s in cv.skills)
-        required = set(s.lower() for s in jd.required_skills)
-        if not required:
+        if not jd.required_skills:
             return False
-        return len(required - cv_skills) > 0
+        for req in jd.required_skills:
+            best = 0.0
+            for cv_skill in cv.skills:
+                sim = semantic_similarity(req, cv_skill)
+                if sim > best:
+                    best = sim
+            if best < 40.0:
+                return True
+        return False
 
 class NoDegreeWhenRequiredRule(CriticalRule):
     def evaluate(self, cv: CandidateProfile, jd: JobDescription) -> bool:
@@ -25,19 +32,20 @@ class NoDegreeWhenRequiredRule(CriticalRule):
             return False
         if not cv.education:
             return True
-        # Check if any degree matches the required one (basic substring)
-        required = jd.degree_required.lower()
+        required = jd.degree_required
+        best_sim = 0.0
         for edu in cv.education:
-            if required in edu.degree.lower():
-                return False
-        return True
+            sim = semantic_similarity(required, edu.degree)
+            if sim > best_sim:
+                best_sim = sim
+        # Only trigger if similarity is below 30 (weak match)
+        return best_sim < 30.0
 
 class ExperienceBelowSeniorRule(CriticalRule):
     def evaluate(self, cv: CandidateProfile, jd: JobDescription) -> bool:
         if jd.required_experience_years <= 0:
             return False
         total_years = 0.0
-        from datetime import datetime
         for exp in cv.experience:
             if exp.start_date:
                 start = datetime.strptime(exp.start_date, "%Y-%m")

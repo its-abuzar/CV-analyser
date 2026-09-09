@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, HTTPException
 from app.controllers.candidate_controller import CandidateController
+from app.storage import storage
 
 router = APIRouter()
 controller = CandidateController()
@@ -19,3 +20,11 @@ async def create_candidate(file: UploadFile):
 
     # 3. Pass to controller
     return await controller.create_candidate_from_bytes(contents, file.filename)
+
+
+@router.get("/candidates")
+async def list_candidates():
+
+    for cv_id, candidate in storage.list_cvs().items():
+        pass  
+    return await storage.list_cvs()

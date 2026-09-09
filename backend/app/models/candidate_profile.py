@@ -71,6 +71,7 @@ class CandidateProfile:
     name: str = ""
     contact: Contact = field(default_factory=Contact)
     summary: str = ""
+    file_name: str = ""
     skills: List[str] = field(default_factory=list)
     experience: List[Experience] = field(default_factory=list)
     education: List[Education] = field(default_factory=list)

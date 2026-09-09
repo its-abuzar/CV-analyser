@@ -1,10 +1,11 @@
 from app.models.candidate_profile import CandidateProfile
 from app.models.job_description import JobDescription
-
+from app.models.analysisRun import AnalysisRun
 class Storage:
     def __init__(self):
         self.cvs = {}
         self.jds = {}
+        self.analysis_runs = {}
         self.active_cv_id = None
         self.active_jd_id = None
 
@@ -47,6 +48,27 @@ class Storage:
 
     def get_active_jd_id(self):
         return self.active_jd_id
+
+
+
+    # ---- Analysis Runs ----
+    def save_analysis_run(self, run_id: str, run: AnalysisRun):
+        self.analysis_runs[run_id] = run
+
+    def get_analysis_run(self, run_id: str) -> AnalysisRun:
+        return self.analysis_runs.get(run_id)
+
+    def list_analysis_runs(self):
+        return self.analysis_runs
+
+    def get_latest_analysis_run(self):
+        if not self.analysis_runs:
+            return None
+        latest_run_id = max(self.analysis_runs.keys(), key=lambda k: self.analysis_runs[k].created_at)
+        return self.analysis_runs[latest_run_id]
+
+
+
 
 # Singleton instance
 storage = Storage()

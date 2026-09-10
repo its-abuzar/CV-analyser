@@ -20,7 +20,7 @@ async def get_workspace_overview():
             "title": active_jd.title if active_jd else None,
             "file_name": active_jd.file_name if active_jd else None
         },
-        "composite": storage.get_latest_analysis_run().result.composite if storage.get_latest_analysis_run() else None
+        "composite": storage.get_latest_analysis_run().result.score if storage.get_latest_analysis_run() else None
     }
     return overview
 

@@ -36,7 +36,7 @@ import {
 import { Tiles, Tile, Note, ago, initials, pct } from '../ui/bits.js';
 import { Region, fill } from '../ui/loader.js';
 import { api } from '../services/api.js';
-import { toast, confirmAction } from '../ui/overlays.js';
+import { toast, confirmAction, openModal, closeOverlays } from '../ui/overlays.js';
 import { navigate } from '../router.js';
 
 export const prefetch = { cvs: 'candidate.list' };
@@ -284,11 +284,66 @@ export function mount(root, ctx) {
     errorTitle: 'Could not read the parse result',
   });
 }
-
 export function onAction(action, el) {
   const arg = el && el.dataset ? el.dataset.arg : undefined;
 
   switch (action) {
+    case 'pick-file': {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.pdf,.docx,.txt,.md';
+      input.onchange = () => {
+        const file = input.files[0];
+        if (!file) return;
+
+        const dropzone = document.querySelector('[data-action="pick-file"]');
+        if (dropzone) {
+          dropzone.setAttribute('aria-disabled', 'true');
+          dropzone.classList.add('is-disabled');
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        openModal({
+          title: 'Uploading your CV',
+          size: 'sm',
+          body: `<div class="stack-3" style="text-align:center">
+            <p class="prose">Uploading your CV… this takes about 15 seconds</p>
+            <div class="track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="--track-width: 0%">
+              <div class="track__fill" style="width: 0%"></div>
+            </div>
+            <p class="muted" style="font-size:var(--fs-12)">Do not close this window.</p>
+          </div>`,
+          foot: '',
+        });
+
+        api('candidate.upload', { body: formData })
+          .then(() => {
+            closeOverlays();
+            toast('CV uploaded and parsed.', { tone: 'pass' });
+            navigate('/intake');
+          })
+          .catch((err) => {
+            closeOverlays();
+            if (dropzone) {
+              dropzone.removeAttribute('aria-disabled');
+              dropzone.classList.remove('is-disabled');
+            }
+            toast(err.userMessage || 'Upload failed.', { tone: 'fault' });
+          });
+      };
+      input.click();
+      return;
+    }
+    case 'run-analysis':
+      api('analysis.run')
+        .then(() => {
+          toast('Analysis complete.', { tone: 'pass' });
+          navigate('/analysis');
+        })
+        .catch((err) => toast(err.userMessage || 'Analysis failed.', { tone: 'fault' }));
+      return;
     case 'paste-cv': {
       const field = document.getElementById('cv-paste');
       const text = field ? field.value.trim() : '';
@@ -319,7 +374,7 @@ export function onAction(action, el) {
     case 'set-active':
       api('candidate.setActive', { params: { candidateId: arg } })
         .then(() => {
-          toast('Active CV switched. Re-run the analysis to see it read against the posting.', { tone: 'pass' });
+          toast('Active CV switched.', { tone: 'pass' });
           navigate('/intake');
         })
         .catch((err) => toast(err.userMessage || 'Could not switch CV.', { tone: 'fault' }));
@@ -338,7 +393,7 @@ export function onAction(action, el) {
     case 'delete-cv':
       confirmAction({
         title: 'Delete this CV?',
-        body: 'The file, its parse result and every reading made from it are removed. Applications you have logged in the tracker are kept.',
+        body: 'The file, its parse result and every reading made from it are removed.',
         confirmLabel: 'Delete it',
         tone: 'danger',
       }).then((yes) => {

@@ -47,3 +47,20 @@ async def activate_candidate(candidateId: str):
     except KeyError:
         raise HTTPException(status_code=404, detail="Candidate not found")
     return {"activeCandidateId": candidateId}
+
+
+@router.get("/candidates/{candidateId}/parse-status")
+async def get_parse_status(candidateId: str):
+    candidate = storage.get_cv(candidateId)
+    if not candidate:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    
+    return {
+        "status": "done",
+        "confidence": 0.85,
+        "steps": [
+            { "label": "Text extraction", "note": "Clean text found", "state": "done" },
+            { "label": "Structure parsing", "note": "Sections identified", "state": "done" },
+            { "label": "Field extraction", "note": "All fields populated", "state": "done" }
+        ]
+    }

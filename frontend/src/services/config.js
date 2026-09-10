@@ -23,7 +23,7 @@ export const CONFIG = {
   apiBaseUrl: runtime('CALIBRE_API_BASE', 'http://127.0.0.1:8000/api/v1'),
 
   /** Serve all data from fixtures instead of the network. */
-  useMocks: runtime('CALIBRE_USE_MOCKS', true),
+  useMocks: runtime('CALIBRE_USE_MOCKS', false),
 
   /** Request timeout in ms. 0 disables. Analysis runs are given longer. */
   timeoutMs: 30000,

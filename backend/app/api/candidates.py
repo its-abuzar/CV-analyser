@@ -1,4 +1,5 @@
 from fastapi import APIRouter, UploadFile, HTTPException
+from pydantic import BaseModel
 from app.controllers.candidate_controller import CandidateController
 from app.storage import storage
 
@@ -6,6 +7,20 @@ router = APIRouter()
 controller = CandidateController()
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+
+class CandidateTextIn(BaseModel):
+    text: str
+
+@router.post("/candidates/text")
+async def create_candidate_from_text(payload: CandidateTextIn):
+    # Delegate to controller
+    result = await controller.create_candidate_from_text(payload.text)
+    result["steps"] = [
+        { "label": "Text received", "state": "done" },
+        { "label": "AI extraction complete", "state": "done" }
+    ]
+    return result
+
 
 @router.post("/candidates")
 async def create_candidate(file: UploadFile):
@@ -18,7 +33,7 @@ async def create_candidate(file: UploadFile):
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(status_code=413, detail="Payload Too Large. Max size is 10 MB.")
 
-    # 3. Pass to controller
+    # 3. Pass to controller - now returns frontend-compatible shape
     result = await controller.create_candidate_from_bytes(contents, file.filename)
     result["steps"] = [
         { "label": "File uploaded", "state": "done" },
@@ -30,10 +45,10 @@ async def create_candidate(file: UploadFile):
 
 @router.get("/candidates")
 async def list_candidates():
-    candidates_dict = {
-        "items": [{"id": cv_id, "file_name": cv.file_name, "active": storage.get_active_cv_id() == cv_id} for cv_id, cv in storage.list_cvs().items()]
-    }
-    return candidates_dict
+    items = []
+    for cv_id, cv in storage.list_cvs().items():
+        items.append(controller.build_summary_for_cv(cv_id, cv))
+    return {"items": items}
 
 @router.get("/candidates/{candidateId}")
 async def get_candidate(candidateId: str):

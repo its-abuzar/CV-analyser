@@ -148,24 +148,25 @@ function parseView(d) {
 /* ---- Transform upload response to list item format ---------------------- */
 
 function toListItem(uploadResponse) {
-  const { id, profile } = uploadResponse;
+  // Upload now returns the summary object directly (not wrapped in {id, profile})
+  // Just ensure field names match what render() expects (camelCase)
   return {
-    id,
-    fileName: profile.file_name,
-    name: profile.name,
-    headline: profile.headline,
-    location: profile.location,
-    openTo: profile.open_to,
-    email: profile.email,
-    phone: profile.phone,
-    summary: profile.summary,
-    words: profile.words,
-    pages: profile.pages,
-    fileSize: profile.file_size,
-    parseConfidence: profile.parse_confidence,
-    uploadedAt: profile.uploaded_at,
-    yearsExperience: profile.years_experience,
-    links: profile.links,
+    id: uploadResponse.id,
+    fileName: uploadResponse.fileName,
+    name: uploadResponse.name,
+    headline: uploadResponse.headline,
+    location: uploadResponse.location,
+    openTo: uploadResponse.openTo,
+    email: uploadResponse.email,
+    phone: uploadResponse.phone,
+    summary: uploadResponse.summary,
+    words: uploadResponse.words,
+    pages: uploadResponse.pages,
+    fileSize: uploadResponse.fileSize,
+    parseConfidence: uploadResponse.parseConfidence,
+    uploadedAt: uploadResponse.uploadedAt,
+    yearsExperience: uploadResponse.yearsExperience,
+    links: uploadResponse.links,
     active: false, // will be set correctly by the caller
   };
 }

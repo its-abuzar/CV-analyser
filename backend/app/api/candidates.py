@@ -19,7 +19,13 @@ async def create_candidate(file: UploadFile):
         raise HTTPException(status_code=413, detail="Payload Too Large. Max size is 10 MB.")
 
     # 3. Pass to controller
-    return await controller.create_candidate_from_bytes(contents, file.filename)
+    result = await controller.create_candidate_from_bytes(contents, file.filename)
+    result["steps"] = [
+        { "label": "File uploaded", "state": "done" },
+        { "label": "PDF parsed", "state": "done" },
+        { "label": "AI extraction complete", "state": "done" }
+    ]
+    return result
 
 
 @router.get("/candidates")

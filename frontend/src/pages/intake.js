@@ -36,7 +36,7 @@ import {
 import { Tiles, Tile, Note, ago, initials, pct } from '../ui/bits.js';
 import { Region, fill } from '../ui/loader.js';
 import { api } from '../services/api.js';
-import { toast, confirmAction, openModal } from '../ui/overlays.js';
+import { toast, confirmAction } from '../ui/overlays.js';
 import { navigate } from '../router.js';
 
 export const prefetch = { cvs: 'candidate.list' };
@@ -305,27 +305,81 @@ export function onAction(action, el) {
         const formData = new FormData();
         formData.append('file', file);
 
-        const close = openModal({
-          title: 'Uploading your CV',
-          size: 'sm',
-          body: `<div class="stack-3" style="text-align:center">
-            <p class="prose">Uploading your CV… this takes about 15 seconds</p>
-            <div class="track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="--track-width: 0%">
-              <div class="track__fill" style="width: 0%"></div>
-            </div>
-            <p class="muted" style="font-size:var(--fs-12)">Do not close this window.</p>
-          </div>`,
-          foot: '',
-        });
+        const steps = [
+          { label: 'Uploading file…', state: 'waiting' },
+          { label: 'Parsing PDF…', state: 'waiting' },
+          { label: 'Extracting information with AI…', state: 'waiting' },
+          { label: 'Done!', state: 'waiting' },
+        ];
 
-        api('candidate.upload', { body: formData })
-          .then(() => {
-            close();
-            toast('CV uploaded and parsed.', { tone: 'pass' });
-            navigate('/intake');
+        let stepElements = [];
+
+        function renderStep(step, index) {
+          const icon = step.state === 'done' ? '✅' : step.state === 'in-progress' ? '🔄' : '⏳';
+          return `<div class="stack-2" style="display:flex;align-items:center;gap:var(--s-3);opacity:${step.state === 'waiting' ? 0.5 : 1};transition:opacity 0.3s">
+            <span style="font-size:var(--fs-18);min-width:28px">${icon}</span>
+            <span class="prose" style="font-weight:${step.state === 'in-progress' ? 600 : 400};transition:font-weight 0.3s">${step.label}</span>
+          </div>`;
+        }
+
+        function updateSteps() {
+          stepElements.forEach((el, i) => {
+            if (el) el.outerHTML = renderStep(steps[i], i);
+          });
+          stepElements = Array.from(overlay.querySelectorAll('[data-step]'));
+        }
+
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+          position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;
+          z-index:1000;padding:var(--s-4);
+        `;
+        overlay.innerHTML = `
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--s-6);min-width:320px;max-width:90vw;box-shadow:var(--shadow-xl)">
+            <h3 class="prose" style="margin:0 0 var(--s-4);font-size:var(--fs-18)">Processing your CV</h3>
+            <div class="stack-3" id="steps-container">
+              ${steps.map((s, i) => `<div data-step="${i}">${renderStep(s, i)}</div>`).join('')}
+            </div>
+            <p class="muted" style="margin-top:var(--s-4);font-size:var(--fs-12);text-align:center">Do not close this window.</p>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        stepElements = Array.from(overlay.querySelectorAll('[data-step]'));
+
+        steps[0].state = 'in-progress';
+        updateSteps();
+
+        const formData2 = new FormData();
+        formData2.append('file', file);
+
+        const step2Timeout = setTimeout(() => {
+          steps[0].state = 'done';
+          steps[1].state = 'in-progress';
+          updateSteps();
+        }, 3000);
+
+        const step3Timeout = setTimeout(() => {
+          steps[1].state = 'done';
+          steps[2].state = 'in-progress';
+          updateSteps();
+        }, 11000);
+
+        api('candidate.upload', { body: formData2 })
+          .then((response) => {
+            clearTimeout(step2Timeout);
+            clearTimeout(step3Timeout);
+            steps.forEach(s => s.state = 'done');
+            updateSteps();
+            setTimeout(() => {
+              overlay.remove();
+              toast('CV uploaded and parsed.', { tone: 'pass' });
+              navigate('/intake');
+            }, 400);
           })
           .catch((err) => {
-            close();
+            clearTimeout(step2Timeout);
+            clearTimeout(step3Timeout);
+            overlay.remove();
             if (dropzone) {
               dropzone.removeAttribute('aria-disabled');
               dropzone.classList.remove('is-disabled');

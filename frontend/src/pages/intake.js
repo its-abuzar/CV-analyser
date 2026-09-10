@@ -36,7 +36,7 @@ import {
 import { Tiles, Tile, Note, ago, initials, pct } from '../ui/bits.js';
 import { Region, fill } from '../ui/loader.js';
 import { api } from '../services/api.js';
-import { toast, confirmAction, openModal, closeOverlays } from '../ui/overlays.js';
+import { toast, confirmAction, openModal } from '../ui/overlays.js';
 import { navigate } from '../router.js';
 
 export const prefetch = { cvs: 'candidate.list' };
@@ -305,7 +305,7 @@ export function onAction(action, el) {
         const formData = new FormData();
         formData.append('file', file);
 
-        openModal({
+        const close = openModal({
           title: 'Uploading your CV',
           size: 'sm',
           body: `<div class="stack-3" style="text-align:center">
@@ -320,12 +320,12 @@ export function onAction(action, el) {
 
         api('candidate.upload', { body: formData })
           .then(() => {
-            closeOverlays();
+            close();
             toast('CV uploaded and parsed.', { tone: 'pass' });
             navigate('/intake');
           })
           .catch((err) => {
-            closeOverlays();
+            close();
             if (dropzone) {
               dropzone.removeAttribute('aria-disabled');
               dropzone.classList.remove('is-disabled');

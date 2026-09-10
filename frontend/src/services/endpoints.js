@@ -31,8 +31,8 @@ export const ENDPOINTS = {
   /* ==== Intake: candidate documents =================================== */
   'candidate.list': { method: 'GET', path: '/candidates', summary: 'All CVs held for this user' },
   'candidate.get': { method: 'GET', path: '/candidates/{candidateId}', summary: 'One parsed CV' },
-  'candidate.upload': { method: 'POST', path: '/candidates', summary: 'Upload a CV file (multipart: file)', body: 'multipart/form-data' },
-  'candidate.paste': { method: 'POST', path: '/candidates/text', summary: 'Create a CV from pasted text', body: 'CandidateTextIn' },
+  'candidate.upload': { method: 'POST', path: '/candidates', summary: 'Upload a CV file (multipart: file)', body: 'multipart/form-data', long: true },
+  'candidate.paste': { method: 'POST', path: '/candidates/text', summary: 'Create a CV from pasted text', body: 'CandidateTextIn', long: true },
   'candidate.delete': { method: 'DELETE', path: '/candidates/{candidateId}', summary: 'Delete a CV and its analyses' },
   'candidate.parseStatus': { method: 'GET', path: '/candidates/{candidateId}/parse-status', summary: 'Poll parse progress' },
   'candidate.reparse': { method: 'POST', path: '/candidates/{candidateId}/reparse', summary: 'Re-run extraction' },

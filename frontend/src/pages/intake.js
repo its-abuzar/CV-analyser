@@ -145,6 +145,31 @@ function parseView(d) {
   </div>`;
 }
 
+/* ---- Transform upload response to list item format ---------------------- */
+
+function toListItem(uploadResponse) {
+  const { id, profile } = uploadResponse;
+  return {
+    id,
+    fileName: profile.file_name,
+    name: profile.name,
+    headline: profile.headline,
+    location: profile.location,
+    openTo: profile.open_to,
+    email: profile.email,
+    phone: profile.phone,
+    summary: profile.summary,
+    words: profile.words,
+    pages: profile.pages,
+    fileSize: profile.file_size,
+    parseConfidence: profile.parse_confidence,
+    uploadedAt: profile.uploaded_at,
+    yearsExperience: profile.years_experience,
+    links: profile.links,
+    active: false, // will be set correctly by the caller
+  };
+}
+
 /* ---- Screen ------------------------------------------------------------- */
 
 export function render(ctx) {
@@ -278,19 +303,47 @@ export function render(ctx) {
 
 let intakeCtx = null;
 
+function swapPageContent(newHtml) {
+  const root = document.getElementById('route-root');
+  if (root) {
+    root.innerHTML = newHtml;
+  }
+}
+
 async function refreshIntakeData() {
   if (!intakeCtx) return;
   try {
     const cvs = await api('candidate.list');
     intakeCtx.data.cvs = cvs;
-    const root = document.getElementById('route-root');
-    if (root) {
-      root.innerHTML = render(intakeCtx);
-      mount(root, intakeCtx);
-    }
+    swapPageContent(render(intakeCtx));
+    mount(document.getElementById('route-root'), intakeCtx);
   } catch (err) {
     console.error('[intake] refresh failed', err);
   }
+}
+
+function applyUploadResponse(uploadResponse) {
+  if (!intakeCtx) return;
+  const items = (intakeCtx.data.cvs && intakeCtx.data.cvs.items) || [];
+  const wasEmpty = items.length === 0;
+
+  const newItem = toListItem(uploadResponse);
+  newItem.active = wasEmpty; // first upload becomes active
+
+  if (wasEmpty) {
+    // First upload: add to empty list
+    intakeCtx.data.cvs.items = [newItem];
+  } else {
+    // Subsequent uploads: add to list, keep existing active unless we want to switch
+    // Mark existing active as inactive
+    items.forEach((item) => { item.active = false; });
+    newItem.active = true;
+    intakeCtx.data.cvs.items = [newItem, ...items];
+  }
+
+  // Synchronous DOM swap — no async gap, no flash
+  swapPageContent(render(intakeCtx));
+  mount(document.getElementById('route-root'), intakeCtx);
 }
 
 export function mount(root, ctx) {
@@ -302,6 +355,48 @@ export function mount(root, ctx) {
     errorTitle: 'Could not read the parse result',
   });
 }
+
+function createUploadOverlay() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;
+    z-index:1000;padding:var(--s-4);opacity:0;transition:opacity 150ms ease-out;
+  `;
+  overlay.innerHTML = `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--s-6);min-width:320px;max-width:90vw;box-shadow:var(--shadow-xl);text-align:center;transform:scale(0.95);transition:transform 150ms ease-out;">
+      <div style="width:48px;height:48px;margin:0 auto var(--s-4);border:3px solid var(--border);border-top-color:var(--brass);border-radius:50%;animation:spin 1s linear infinite"></div>
+      <h3 class="prose" style="margin:0 0 var(--s-2);font-size:var(--fs-18)">Parsing your CV</h3>
+      <p class="muted" style="margin:0 0 var(--s-4);font-size:var(--fs-14)">This takes 10–15 seconds. Do not close this window.</p>
+      <div class="track" style="height:6px;border-radius:3px" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Parse progress">
+        <div class="track__fill" style="width:0%;transition:none;animation:indeterminate 2s ease-in-out infinite"></div>
+      </div>
+      <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes indeterminate {
+          0% { width: 0%; margin-left: 0%; }
+          50% { width: 60%; margin-left: 0%; }
+          100% { width: 0%; margin-left: 100%; }
+        }
+      </style>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  // Force reflow then animate in
+  requestAnimationFrame(() => {
+    overlay.style.opacity = '1';
+    overlay.firstElementChild.style.transform = 'scale(1)';
+  });
+  return overlay;
+}
+
+function removeUploadOverlay(overlay) {
+  overlay.style.opacity = '0';
+  overlay.firstElementChild.style.transform = 'scale(0.95)';
+  overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+  // Fallback
+  setTimeout(() => overlay.remove(), 200);
+}
+
 export function onAction(action, el) {
   const arg = el && el.dataset ? el.dataset.arg : undefined;
 
@@ -320,42 +415,21 @@ export function onAction(action, el) {
           dropzone.classList.add('is-disabled');
         }
 
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-          position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;
-          z-index:1000;padding:var(--s-4);
-        `;
-        overlay.innerHTML = `
-          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--s-6);min-width:320px;max-width:90vw;box-shadow:var(--shadow-xl);text-align:center">
-            <div style="width:48px;height:48px;margin:0 auto var(--s-4);border:3px solid var(--border);border-top-color:var(--brass);border-radius:50%;animation:spin 1s linear infinite"></div>
-            <h3 class="prose" style="margin:0 0 var(--s-2);font-size:var(--fs-18)">Parsing your CV</h3>
-            <p class="muted" style="margin:0 0 var(--s-4);font-size:var(--fs-14)">This takes 10–15 seconds. Do not close this window.</p>
-            <div class="track" style="height:6px;border-radius:3px" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Parse progress">
-              <div class="track__fill" style="width:0%;transition:none;animation:indeterminate 2s ease-in-out infinite"></div>
-            </div>
-            <style>
-              @keyframes spin { to { transform: rotate(360deg); } }
-              @keyframes indeterminate {
-                0% { width: 0%; margin-left: 0%; }
-                50% { width: 60%; margin-left: 0%; }
-                100% { width: 0%; margin-left: 100%; }
-              }
-            </style>
-          </div>
-        `;
-        document.body.appendChild(overlay);
+        const overlay = createUploadOverlay();
 
         const formData = new FormData();
         formData.append('file', file);
 
         api('candidate.upload', { body: formData })
           .then((response) => {
-            overlay.remove();
+            // Apply upload response directly — no second API call, no async gap
+            applyUploadResponse(response);
+            // Overlay stays up until new content is painted, then fade out
+            removeUploadOverlay(overlay);
             toast('CV uploaded and parsed.', { tone: 'pass' });
-            refreshIntakeData();
           })
           .catch((err) => {
-            overlay.remove();
+            removeUploadOverlay(overlay);
             if (dropzone) {
               dropzone.removeAttribute('aria-disabled');
               dropzone.classList.remove('is-disabled');
@@ -382,12 +456,17 @@ export function onAction(action, el) {
         if (field) field.focus();
         return;
       }
+      const overlay = createUploadOverlay();
       api('candidate.paste', { body: { text } })
-        .then(() => {
+        .then((response) => {
+          applyUploadResponse(response);
+          removeUploadOverlay(overlay);
           toast('Read and parsed.', { tone: 'pass' });
-          refreshIntakeData();
         })
-        .catch((err) => toast(err.userMessage || 'That text could not be read.', { tone: 'fault' }));
+        .catch((err) => {
+          removeUploadOverlay(overlay);
+          toast(err.userMessage || 'That text could not be read.', { tone: 'fault' });
+        });
       return;
     }
     case 'import-url': {

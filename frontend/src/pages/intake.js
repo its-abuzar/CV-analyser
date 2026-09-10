@@ -276,7 +276,25 @@ export function render(ctx) {
   `);
 }
 
+let intakeCtx = null;
+
+async function refreshIntakeData() {
+  if (!intakeCtx) return;
+  try {
+    const cvs = await api('candidate.list');
+    intakeCtx.data.cvs = cvs;
+    const root = document.getElementById('route-root');
+    if (root) {
+      root.innerHTML = render(intakeCtx);
+      mount(root, intakeCtx);
+    }
+  } catch (err) {
+    console.error('[intake] refresh failed', err);
+  }
+}
+
 export function mount(root, ctx) {
+  intakeCtx = ctx;
   const items = (ctx.data.cvs && ctx.data.cvs.items) || [];
   const active = items.find((c) => c.active) || items[0];
   if (!active) return;
@@ -334,7 +352,7 @@ export function onAction(action, el) {
           .then((response) => {
             overlay.remove();
             toast('CV uploaded and parsed.', { tone: 'pass' });
-            navigate('/intake');
+            refreshIntakeData();
           })
           .catch((err) => {
             overlay.remove();
@@ -367,7 +385,7 @@ export function onAction(action, el) {
       api('candidate.paste', { body: { text } })
         .then(() => {
           toast('Read and parsed.', { tone: 'pass' });
-          navigate('/intake');
+          refreshIntakeData();
         })
         .catch((err) => toast(err.userMessage || 'That text could not be read.', { tone: 'fault' }));
       return;
@@ -387,7 +405,7 @@ export function onAction(action, el) {
       api('candidate.setActive', { params: { candidateId: arg } })
         .then(() => {
           toast('Active CV switched.', { tone: 'pass' });
-          navigate('/intake');
+          refreshIntakeData();
         })
         .catch((err) => toast(err.userMessage || 'Could not switch CV.', { tone: 'fault' }));
       return;
@@ -413,7 +431,7 @@ export function onAction(action, el) {
         api('candidate.delete', { params: { candidateId: arg } })
           .then(() => {
             toast('Deleted.');
-            navigate('/intake');
+            refreshIntakeData();
           })
           .catch((err) => toast(err.userMessage || 'Could not delete.', { tone: 'fault' }));
       });

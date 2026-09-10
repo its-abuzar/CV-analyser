@@ -140,7 +140,7 @@ export function openModal({ title, body, foot, size = 'md', onMount }) {
   };
 
   if (onMount) onMount(modal);
-  return closeOverlays;
+  return closeOverlay;
 }
 
 /* ---- Drawer ------------------------------------------------------------ */
@@ -181,7 +181,7 @@ export function openDrawer({ title, eyebrow, body, foot, onMount }) {
   };
 
   if (onMount) onMount(drawer);
-  return closeOverlays;
+  return closeOverlay;
 }
 
 export function closeOverlays() {

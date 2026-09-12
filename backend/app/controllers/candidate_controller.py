@@ -13,15 +13,15 @@ class CandidateController:
             candidate = service.process_upload(contents, filename)
             cv_id = str(uuid.uuid4())
             storage.save_cv(cv_id, candidate)
-            
-            # Build summary for frontend
             file_size = len(contents)
             summary = service.build_summary(candidate, cv_id, filename, file_size)
             summary["active"] = storage.get_active_cv_id() == cv_id
-            
             return summary
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+            print(f"ERROR IN CONTROLLER: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
 
     async def create_candidate_from_text(self, text: str):
         try:

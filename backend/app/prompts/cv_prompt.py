@@ -4,6 +4,7 @@ Extract the following fields from the CV text below. Return a JSON object with *
 Fields:
 
 - "name": string – the full name of the candidate.
+- "headline": string – a short professional headline, e.g. "Software Engineer at TechNova" or "Full-Stack Developer". Derive it from the most recent job title and company, or the candidate's objective if no experience exists.
 - "contact": object with "email", "phone", "location", "linkedin", "github" – only if explicitly present.
 - "summary": string – professional summary or objective.
 - "skills": list of strings – technical or professional skills. Do NOT include languages here.

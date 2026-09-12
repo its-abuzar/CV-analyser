@@ -1,9 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import traceback
+from fastapi import Request
+from fastapi.responses import JSONResponse
 load_dotenv()
 
 app = FastAPI(title="Calibre", version="1.0.0")
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    traceback.print_exc()
+    return JSONResponse(status_code=500, detail=str(exc))
+
 
 @app.get("/")
 def root():

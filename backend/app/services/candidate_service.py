@@ -22,12 +22,24 @@ class CandidateService:
         file_path.unlink()
         return candidate
 
+    def calculate_confidence(self, candidate: CandidateProfile) -> float:
+        name_score = 1 if candidate.name else 0
+        email_score = 1 if candidate.contact.email else 0
+        skills_score = min(len(candidate.skills), 5) / 5
+        experience_score = min(len(candidate.experience), 5) / 5
+        education_score = min(len(candidate.education), 5) / 5
+        return round(
+            name_score * 0.10 +
+            email_score * 0.10 +
+            skills_score * 0.25 +
+            experience_score * 0.35 +
+            education_score * 0.20,
+            2
+        )
+
     def build_summary(self, candidate: CandidateProfile, cv_id: str, original_filename: str, file_size: int) -> dict:
-        """Build the flattened summary object the frontend expects."""
-        from datetime import datetime
         import math
         
-        # Compute word count from markdown-ish text
         text_parts = [
             candidate.name,
             candidate.summary,
@@ -41,10 +53,8 @@ class CandidateService:
         full_text = " ".join(filter(None, text_parts))
         words = len(full_text.split())
         
-        # Estimate pages (roughly 350 words per page)
         pages = max(1, math.ceil(words / 350))
         
-        # File size human readable
         if file_size < 1024:
             file_size_str = f"{file_size} B"
         elif file_size < 1024 * 1024:
@@ -52,13 +62,11 @@ class CandidateService:
         else:
             file_size_str = f"{file_size / (1024 * 1024):.1f} MB"
         
-        # Compute years of experience from experience entries
         years_exp = 0.0
         for exp in candidate.experience:
             try:
                 from_date = exp.start_date
                 to_date = exp.end_date or datetime.now().strftime("%Y-%m")
-                # Parse dates like "2023-04" or "2023"
                 from_year = int(from_date[:4]) if from_date else 0
                 to_year = int(to_date[:4]) if to_date else datetime.now().year
                 to_month = int(to_date[5:7]) if len(to_date) > 5 else 12
@@ -68,7 +76,6 @@ class CandidateService:
             except (ValueError, IndexError):
                 pass
         
-        # Build links object
         links = {}
         if candidate.contact.linkedin:
             links["linkedin"] = candidate.contact.linkedin
@@ -77,15 +84,11 @@ class CandidateService:
         if candidate.portfolio_links:
             links["site"] = candidate.portfolio_links[0]
         
-        # Headline from most recent role
-        headline = ""
-        if candidate.experience:
-            latest = candidate.experience[0]
-            headline = f"{latest.title} at {latest.company}"
-        elif candidate.name:
-            headline = candidate.name
+        headline = candidate.headline or (
+            f"{candidate.experience[0].title} at {candidate.experience[0].company}"
+            if candidate.experience else candidate.name
+        )
         
-        # Open to - derive from location or use default
         open_to = candidate.contact.location or "Open to opportunities"
         
         return {
@@ -101,9 +104,9 @@ class CandidateService:
             "pages": pages,
             "words": words,
             "uploadedAt": datetime.now(timezone.utc).isoformat(),
-            "parseConfidence": 0.85,  # TODO: compute from parser confidence
+            "parseConfidence": self.calculate_confidence(candidate),
             "yearsExperience": round(years_exp, 1),
             "links": links,
             "summary": candidate.summary,
-            "active": False,  # will be set by storage
+            "active": False,
         }

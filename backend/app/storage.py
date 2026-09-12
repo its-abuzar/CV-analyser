@@ -29,6 +29,12 @@ class Storage:
     def get_active_cv_id(self):
         return self.active_cv_id
 
+    def delete_cv(self, cv_id: str):
+        if cv_id in self.cvs:
+            del self.cvs[cv_id]
+            if self.active_cv_id == cv_id:
+                self.active_cv_id = None  # reset active CV if it was deleted
+
     # ---- JDs ----
     def save_jd(self, jd_id: str, jd: JobDescription):
         self.jds[jd_id] = jd

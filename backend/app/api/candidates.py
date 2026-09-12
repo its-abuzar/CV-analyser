@@ -85,3 +85,12 @@ async def get_parse_status(candidateId: str):
             { "label": "Field extraction", "note": "All fields populated", "state": "done" }
         ]
     }
+
+
+@router.delete("/candidates/{candidateId}")
+async def delete_candidate(candidateId: str):
+    try:
+        storage.delete_cv(candidateId)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Candidate not found")
+    return {"message": "Deleted"}

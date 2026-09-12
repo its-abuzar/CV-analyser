@@ -78,7 +78,7 @@ async def get_parse_status(candidateId: str):
     
     return {
         "status": "done",
-        "confidence": 0.85,
+        "confidence": controller.calculate_confidence(candidate),
         "steps": [
             { "label": "Text extraction", "note": "Clean text found", "state": "done" },
             { "label": "Structure parsing", "note": "Sections identified", "state": "done" },

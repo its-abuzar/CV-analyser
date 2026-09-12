@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from app.services.candidate_service import CandidateService
+from app.models.candidate_profile import CandidateProfile
 from app.storage import storage
 from dataclasses import asdict
 import uuid
@@ -40,6 +41,19 @@ class CandidateController:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
 
+    def calculate_confidence(self, candidate) -> float:
+        name_score = 1 if candidate.name else 0
+        email_score = 1 if candidate.contact.email else 0
+        skills_score = min(len(candidate.skills), 5) / 5
+        experience_score = min(len(candidate.experience), 5) / 5
+        education_score = min(len(candidate.education), 5) / 5
+        return (
+            name_score * 0.10 +
+            email_score * 0.10 +
+            skills_score * 0.25 +
+            experience_score * 0.35 +
+            education_score * 0.20
+        )
     def build_summary_for_cv(self, cv_id: str, candidate: CandidateProfile) -> dict:
         """Build summary for an existing CV (for list endpoint)."""
         # We need file size - for now estimate from profile

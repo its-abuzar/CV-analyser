@@ -364,7 +364,7 @@ function createUploadOverlay() {
     z-index:1000;padding:var(--s-4);opacity:0;transition:opacity 150ms ease-out;
   `;
   overlay.innerHTML = `
-    <div style="background:#1e293b;border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--s-6);min-width:320px;max-width:90vw;box-shadow:var(--shadow-xl);text-align:center;transform:scale(0.95);transition:transform 150ms ease-out;">
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--s-6);min-width:320px;max-width:90vw;box-shadow:var(--shadow-xl);text-align:center;transform:scale(0.95);transition:transform 150ms ease-out;">
       <div style="width:48px;height:48px;margin:0 auto var(--s-4);border:3px solid var(--border);border-top-color:var(--brass);border-radius:50%;animation:spin 1s linear infinite"></div>
       <h3 style="margin:0 0 var(--s-2);font-size:var(--fs-18);color:#ffffff !important">Parsing your CV</h3>
       <p style="margin:0 0 var(--s-4);font-size:var(--fs-14);color:#ffffff !important">This takes 10–15 seconds. Do not close this window.</p>

@@ -5,6 +5,7 @@ Fields:
 
 - "name": string – the full name of the candidate.
 - "headline": string – a short professional headline, e.g. "Software Engineer at TechNova" or "Full-Stack Developer". Derive it from the most recent job title and company, or the candidate's objective if no experience exists.
+- "open_to": string – what the candidate is open to, e.g. "Remote", "Hybrid", "Lahore, Pakistan", "Open to relocation". Extract only if explicitly stated. If not mentioned, use "Not mentioned".
 - "contact": object with "email", "phone", "location", "linkedin", "github" – only if explicitly present.
 - "summary": string – professional summary or objective.
 - "skills": list of strings – technical or professional skills. Do NOT include languages here.

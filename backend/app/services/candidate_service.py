@@ -89,7 +89,7 @@ class CandidateService:
             if candidate.experience else candidate.name
         )
         
-        open_to = candidate.contact.location or "Open to opportunities"
+        open_to = candidate.open_to
         
         return {
             "id": cv_id,

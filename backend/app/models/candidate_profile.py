@@ -73,6 +73,7 @@ class CandidateProfile:
     summary: str = ""
     file_name: str = ""
     headline: str = ""
+    open_to: str = "Not mentioned"
     skills: List[str] = field(default_factory=list)
     experience: List[Experience] = field(default_factory=list)
     education: List[Education] = field(default_factory=list)

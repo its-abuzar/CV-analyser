@@ -41,7 +41,8 @@ class CVProfileParser:
 
         return CandidateProfile(
             name=data.get("name", ""),
-            headline=data.get("headline", ""),  # ← add this line
+            headline=data.get("headline", ""),  
+            open_to=data.get("open_to", "Not mentioned")
             contact=contact,
             summary=data.get("summary", ""),
             skills=data.get("skills", []),

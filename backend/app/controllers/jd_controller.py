@@ -15,3 +15,12 @@ class JDController:
             return {"id": jd_id, "profile": asdict(jd)}
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+
+    async def create_jd_from_text(self, text: str, filename: str):
+        try:
+            jd = service.process_text_upload(text, filename)
+            jd_id = str(uuid.uuid4())
+            storage.save_jd(jd_id, jd)
+            return {"id": jd_id, "profile": asdict(jd)}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")

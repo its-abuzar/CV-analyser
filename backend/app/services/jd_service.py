@@ -36,7 +36,7 @@ class JDService:
 
         return jd
 
-    def process_upload(self, contents: bytes, original_filename: str) -> JobDescription:
+    def process_pdf_upload(self, contents: bytes, original_filename: str) -> JobDescription:
         generated_filename = f"{uuid.uuid4()}.pdf"
         file_path = self.upload_dir / generated_filename
         file_path.write_bytes(contents)
@@ -45,4 +45,10 @@ class JDService:
         jd = self._extract_degree_and_years(jd)
         jd.file_name = original_filename
         file_path.unlink()
+        return jd
+
+    def process_text_upload(self, text: str, original_filename: str) -> JobDescription:
+        jd = self.jd_parser.parse(text)
+        jd = self._extract_degree_and_years(jd)
+        jd.file_name = original_filename
         return jd

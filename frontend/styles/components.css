@@ -1401,6 +1401,7 @@
   justify-items: center;
   transition: border-color var(--t-fast) var(--ease-out),
     background var(--t-fast) var(--ease-out);
+  cursor: pointer;
 }
 
 .dropzone:hover,

@@ -13,12 +13,13 @@ async def get_workspace_overview():
         "candidate": {
             "id": storage.get_active_cv_id() if active_cv else None,
             "name": active_cv.name if active_cv else None,
-            "file_name": active_cv.file_name if active_cv else None
+            "fileName": active_cv.file_name if active_cv else None,
+            "headline": active_cv.headline if active_cv else None
         },
         "role": {
             "id": storage.get_active_jd_id() if active_jd else None,
             "title": active_jd.title if active_jd else None,
-            "file_name": active_jd.file_name if active_jd else None
+            "fileName": active_jd.file_name if active_jd else None
         },
         "composite": storage.get_latest_analysis_run().result.score if storage.get_latest_analysis_run() else None
     }

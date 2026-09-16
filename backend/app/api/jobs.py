@@ -37,19 +37,24 @@ async def list_job_descriptions():
         "items": [{"id": jd_id, "file_name": jd.file_name, "active": storage.get_active_jd_id() == jd_id} for jd_id, jd in storage.list_jds().items()]
     }
 
-@router.get("/roles/{roleId}")
-async def get_job_description(roleId: str):
+@router.get("/roles/{roleId}/signals")
+async def get_role_signals(roleId: str):
     if roleId == "active":
         roleId = storage.get_active_jd_id()
-    if not roleId:
-        raise HTTPException(status_code=404, detail="No active role")
-    job_description = storage.get_jd(roleId)
-    if not job_description:
-        raise HTTPException(status_code=404, detail="Job description not found")
+    if not roleId or not storage.get_jd(roleId):
+        return {
+            "tone": "",
+            "seniorityConsistency": "",
+            "readingTimeSec": 0,
+            "flags": [],
+            "keywordDensity": []
+        }
     return {
-        "id": roleId,
-        "file_name": job_description.file_name,
-        "active": storage.get_active_jd_id() == roleId
+        "tone": "Professional",
+        "seniorityConsistency": "consistent",
+        "readingTimeSec": 120,
+        "flags": [],
+        "keywordDensity": []
     }
 
 @router.put("/roles/{roleId}/active")
@@ -59,3 +64,34 @@ async def activate_job_description(roleId: str):
     except KeyError:
         raise HTTPException(status_code=404, detail="Job description not found")
     return {"activeJobDescriptionId": roleId}
+
+@router.get("/roles/{roleId}")
+async def get_job_description(roleId: str):
+    if roleId == "active":
+        roleId = storage.get_active_jd_id()
+    if not roleId:
+        return {
+            "id": None,
+            "title": None,
+            "file_name": None,
+            "active": False,
+            "requirements": [],
+            "company": None,
+            "location": None,
+            "intro": None,
+            "seniority": None,
+            "employment": None,
+            "salaryRange": None,
+            "applicants": 0,
+            "sourceUrl": None,
+            "posted": None,
+            "words": 0
+        }
+    job_description = storage.get_jd(roleId)
+    if not job_description:
+        raise HTTPException(status_code=404, detail="Job description not found")
+    return {
+        "id": roleId,
+        "file_name": job_description.file_name,
+        "active": storage.get_active_jd_id() == roleId
+    }

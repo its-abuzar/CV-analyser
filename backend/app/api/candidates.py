@@ -52,6 +52,10 @@ async def list_candidates():
 
 @router.get("/candidates/{candidateId}")
 async def get_candidate(candidateId: str):
+    if candidateId == "active":
+        candidateId = storage.get_active_cv_id()
+    if not candidateId:
+        raise HTTPException(status_code=404, detail="No active candidate")
     candidate = storage.get_cv(candidateId)
     if not candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")

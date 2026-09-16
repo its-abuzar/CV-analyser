@@ -22,5 +22,5 @@ class JDController:
             jd_id = str(uuid.uuid4())
             storage.save_jd(jd_id, jd)
             return {"id": jd_id, "profile": asdict(jd)}
-        except Exception as e:
+        except Exception as e:  
             raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")

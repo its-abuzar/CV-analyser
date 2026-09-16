@@ -83,7 +83,7 @@ function firstRun() {
       title: 'Paste the posting',
       desc: 'Fastest when you already have the text copied.',
       body: Textarea({ id: 'jd-paste', rows: 6, placeholder: 'Paste the full job description here…' }),
-      foot: `<button class="btn btn--primary" data-action="paste-jd">Extract requirements</button>`,
+      foot: `<button type = "button" class="btn btn--primary" data-action="paste-jd">Extract requirements</button>`,
     })}
     ${Card({
       title: 'Give a posting URL',
@@ -244,6 +244,45 @@ export function render(ctx) {
     </div>`);
 }
 
+function createJDOverlay() {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;
+    z-index:1000;padding:var(--s-4);opacity:0;transition:opacity 150ms ease-out;
+  `;
+  overlay.innerHTML = `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--s-6);min-width:320px;max-width:90vw;box-shadow:var(--shadow-xl);text-align:center;transform:scale(0.95);transition:transform 150ms ease-out;">
+      <div style="width:48px;height:48px;margin:0 auto var(--s-4);border:3px solid var(--border);border-top-color:var(--brass);border-radius:50%;animation:spin 1s linear infinite"></div>
+      <h3 style="margin:0 0 var(--s-2);font-size:var(--fs-18);color:#ffffff !important">Processing job description</h3>
+      <p style="margin:0 0 var(--s-4);font-size:var(--fs-14);color:#ffffff !important">This takes about 5 seconds. Do not close this window.</p>
+      <div class="track" style="height:6px;border-radius:3px" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Parse progress">
+        <div class="track__fill" style="width:0%;transition:none;animation:indeterminate 2s ease-in-out infinite"></div>
+      </div>
+      <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes indeterminate {
+          0% { width: 0%; margin-left: 0%; }
+          50% { width: 60%; margin-left: 0%; }
+          100% { width: 0%; margin-left: 100%; }
+        }
+      </style>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => {
+    overlay.style.opacity = '1';
+    overlay.firstElementChild.style.transform = 'scale(1)';
+  });
+  return overlay;
+}
+
+function removeJDOverlay(overlay) {
+  overlay.style.opacity = '0';
+  overlay.firstElementChild.style.transform = 'scale(0.95)';
+  overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+  setTimeout(() => overlay.remove(), 200);
+}
+
 /* ---- Behaviour ---------------------------------------------------------- */
 
 export function onAction(action, el) {
@@ -269,9 +308,16 @@ export function onAction(action, el) {
       toast('Paste the full posting — a line or two is not enough to extract requirements from.', { tone: 'caution' });
       return;
     }
+    const overlay = createJDOverlay();
     api('role.create', { body: { text: value } })
-      .then(() => navigate('/sources/job-description'))
-      .catch((err) => toast(err.userMessage || 'Could not read that posting.', { tone: 'fault' }));
+      .then(() => {
+        removeJDOverlay(overlay);
+        navigate('/sources/job-description');
+      })
+      .catch((err) => {
+        removeJDOverlay(overlay);
+        toast(err.userMessage || 'Could not read that posting.', { tone: 'fault' });
+      });
     return;
   }
   if (action === 'read-url') {
@@ -281,8 +327,15 @@ export function onAction(action, el) {
       toast('Paste a posting URL first.', { tone: 'caution' });
       return;
     }
+    const overlay = createJDOverlay();
     api('role.create', { body: { url: value } })
-      .then(() => navigate('/sources/job-description'))
-      .catch((err) => toast(err.userMessage || 'Could not read that posting.', { tone: 'fault' }));
+      .then(() => {
+        removeJDOverlay(overlay);
+        navigate('/sources/job-description');
+      })
+      .catch((err) => {
+        removeJDOverlay(overlay);
+        toast(err.userMessage || 'Could not read that posting.', { tone: 'fault' });
+      });
   }
 }

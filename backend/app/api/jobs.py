@@ -106,4 +106,4 @@ async def get_job_description(roleId: str):
         "posted": job_description.posted_date,
         "words": 0,
         "requirements": []
-    }
+    } 

@@ -16,5 +16,5 @@ async def analyze():
 async def get_latest_analysis_run():
     latest_run = storage.get_latest_analysis_run()
     if not latest_run:
-        raise HTTPException(status_code=404, detail="No analysis runs found")
+        return {}
     return latest_run

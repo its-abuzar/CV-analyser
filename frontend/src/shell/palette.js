@@ -68,16 +68,55 @@ function rowCommand(c, i, active) {
 }
 
 /** Builds the flat result list; the index is what the arrow keys move through. */
+const DAILY_FEATURE_PATHS = new Set([
+  '/',
+  '/intake',
+  '/profile',
+
+  '/sources/job-description',
+  '/sources/linkedin',
+  '/sources/github',
+
+  '/analysis',
+  '/analysis/evidence',
+
+  '/improve/bullets',
+  '/improve/tailor',
+  '/improve/keywords',
+  '/improve/summary',
+  '/improve/claims',
+
+  '/interview/questions',
+
+  '/apply/discover',
+  '/apply/tracker',
+  '/apply/cover-letter',
+  '/apply/outreach',
+
+  '/grow/roadmap',
+  '/grow/progress',
+
+  '/search',
+  '/reports',
+  '/privacy',
+  '/integrations',
+  '/settings',
+]);
+
+function isDailyFeature(feature) {
+  return DAILY_FEATURE_PATHS.has(feature.path);
+}
+
 export function paletteResults(query) {
   const q = (query || '').trim().toLowerCase();
 
   if (!q) {
     const recent = recentFeatures();
-    const primary = FEATURES.filter((f) => f.primary);
+    const daily = FEATURES.filter(isDailyFeature);
     return [
       ...(recent.length ? [{ group: 'Recent' }, ...recent.map((f) => ({ feature: f }))] : []),
       { group: 'Start here' },
-      ...primary.map((f) => ({ feature: f })),
+      ...daily.map((f) => ({ feature: f })),
       { group: 'Commands' },
       ...COMMANDS.slice(0, 4).map((c) => ({ command: c })),
     ];

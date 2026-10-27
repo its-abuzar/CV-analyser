@@ -10,6 +10,45 @@ import { MODULES, FEATURES, featuresByModule } from '../registry.js';
 import { icon } from '../ui/icons.js';
 import { esc } from '../ui/primitives.js';
 
+const DAILY_FEATURE_PATHS = new Set([
+  '/',
+  '/intake',
+  '/profile',
+
+  '/sources/job-description',
+  '/sources/linkedin',
+  '/sources/github',
+
+  '/analysis',
+  '/analysis/evidence',
+
+  '/improve/bullets',
+  '/improve/tailor',
+  '/improve/keywords',
+  '/improve/summary',
+  '/improve/claims',
+
+  '/interview/questions',
+
+  '/apply/discover',
+  '/apply/tracker',
+  '/apply/cover-letter',
+  '/apply/outreach',
+
+  '/grow/roadmap',
+  '/grow/progress',
+
+  '/search',
+  '/reports',
+  '/privacy',
+  '/integrations',
+  '/settings',
+]);
+
+function isDailyFeature(feature) {
+  return DAILY_FEATURE_PATHS.has(feature.path);
+}
+
 function navLink(feature, currentPath) {
   const isCurrent = feature.path === currentPath;
   return `<a class="nav-link" href="#${feature.path}"
@@ -22,9 +61,13 @@ function navLink(feature, currentPath) {
 }
 
 function moduleGroup(module, currentPath, counts) {
-  const features = featuresByModule(module.id);
-  const holdsCurrent = features.some((f) => f.path === currentPath);
+  const allFeatures = featuresByModule(module.id);
+  const holdsCurrent = allFeatures.some((f) => f.path === currentPath);
   const count = counts[module.id];
+
+  const daily = allFeatures.filter(isDailyFeature);
+  const current = allFeatures.find((f) => f.path === currentPath);
+  const shown = current && !isDailyFeature(current) ? [...daily, current] : daily;
 
   return `<details class="module" ${holdsCurrent ? 'open' : ''} data-module="${module.id}">
     <summary class="module__summary" title="${esc(module.blurb)}">
@@ -34,7 +77,7 @@ function moduleGroup(module, currentPath, counts) {
       ${count ? `<span class="module__count">${count}</span>` : ''}
     </summary>
     <div class="module__items">
-      ${features.map((f) => navLink(f, currentPath)).join('')}
+      ${shown.map((f) => navLink(f, currentPath)).join('')}
     </div>
   </details>`;
 }
